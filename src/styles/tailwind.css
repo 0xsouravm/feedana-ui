@@ -1,0 +1,185 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Core Colors */
+    --color-background: #0A0A0A; /* near-black */
+    --color-foreground: #FFFFFF; /* white */
+    --color-border: rgba(255, 255, 255, 0.1); /* white-10 */
+    --color-input: #1A1A1A; /* gray-900 */
+    --color-ring: #00FF88; /* green-400 */
+    
+    /* Card Colors */
+    --color-card: #2A2A2A; /* gray-800 */
+    --color-card-foreground: #FFFFFF; /* white */
+    --color-popover: #1A1A1A; /* gray-900 */
+    --color-popover-foreground: #FFFFFF; /* white */
+    
+    /* Muted Colors */
+    --color-muted: #2A2A2A; /* gray-800 */
+    --color-muted-foreground: #B0B0B0; /* gray-400 */
+    
+    /* Primary Colors */
+    --color-primary: #000000; /* black */
+    --color-primary-foreground: #FFFFFF; /* white */
+    
+    /* Secondary Colors */
+    --color-secondary: #1A1A1A; /* gray-900 */
+    --color-secondary-foreground: #FFFFFF; /* white */
+    
+    /* Accent Colors */
+    --color-accent: #00FF88; /* green-400 */
+    --color-accent-foreground: #000000; /* black */
+    
+    /* State Colors */
+    --color-success: #00FF88; /* green-400 */
+    --color-success-foreground: #000000; /* black */
+    --color-warning: #FFB800; /* amber-400 */
+    --color-warning-foreground: #000000; /* black */
+    --color-error: #FF4444; /* red-500 */
+    --color-error-foreground: #FFFFFF; /* white */
+    --color-destructive: #FF4444; /* red-500 */
+    --color-destructive-foreground: #FFFFFF; /* white */
+    
+    /* Surface Colors */
+    --color-surface: #2A2A2A; /* gray-800 */
+    --color-surface-foreground: #FFFFFF; /* white */
+    
+    /* Text Hierarchy */
+    --color-text-primary: #FFFFFF; /* white */
+    --color-text-secondary: #808080; /* gray-500 */
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(255, 255, 255, 0.05);
+    --shadow-md: 0 4px 12px rgba(255, 255, 255, 0.05);
+    --shadow-lg: 0 8px 32px rgba(255, 255, 255, 0.05);
+    --shadow-xl: 0 20px 64px rgba(255, 255, 255, 0.1);
+    
+    /* Glassmorphism */
+    --glass-bg: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    
+    /* Neomorphic */
+    --neomorph-inset: inset 0 4px 12px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(255, 255, 255, 0.05);
+  }
+  
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+  }
+  
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@layer components {
+  /* Glassmorphism Components */
+  .glass-card {
+    @apply backdrop-blur-xl bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-2xl;
+  }
+  
+  /* Neomorphic Components */
+  .neomorph-inset {
+    box-shadow: var(--neomorph-inset);
+  }
+  
+  /* Cryptographic Animations */
+  .pulse-glow {
+    animation: pulse-glow 4s ease-in-out infinite;
+  }
+  
+  @keyframes pulse-glow {
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+    }
+    50% {
+      transform: scale(1.02);
+      box-shadow: 0 0 30px rgba(0, 255, 136, 0.2);
+    }
+  }
+  
+  /* Stealth Transitions */
+  .stealth-reveal {
+    clip-path: polygon(0 0, 0 0, 0 100%, 0% 100%);
+    transition: clip-path 0.8s ease-out;
+  }
+  
+  .stealth-reveal.active {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+  
+  /* Interactive Hover States */
+  .interactive-lift {
+    transition: all 0.3s ease-out;
+  }
+  
+  .interactive-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+  
+  /* Trust Indicators */
+  .trust-border {
+    border: 2px solid var(--color-accent);
+  }
+  
+  /* Quantum Navigation */
+  .quantum-dot {
+    transition: all 0.3s ease-out;
+  }
+  
+  .quantum-dot:hover {
+    transform: scale(1.2) rotate(45deg);
+  }
+}
+
+@layer utilities {
+  /* Custom Spacing */
+  .section-padding {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+  
+  .container-padding {
+    @apply px-4 sm:px-6 lg:px-8 xl:px-12;
+  }
+  
+  /* Typography Utilities */
+  .text-gradient {
+    background: linear-gradient(135deg, #FFFFFF 0%, #B0B0B0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* Animation Utilities */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+  
+  /* Backdrop Utilities */
+  .backdrop-sanctuary {
+    backdrop-filter: blur(20px);
+    background: var(--glass-bg);
+  }
+}

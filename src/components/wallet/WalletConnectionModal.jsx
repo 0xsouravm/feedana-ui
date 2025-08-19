@@ -10,9 +10,8 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState(null);
   const lastSelectedWallet = useRef(null);
-  const [scrollPosition, setScrollPosition] = useState(0);
 
-  // Capture scroll position when modal opens
+  // Prevent scrolling when modal is open
   useEffect(() => {
     const preventDefault = (e) => {
       e.preventDefault();
@@ -21,7 +20,6 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
     };
 
     if (isOpen) {
-      setScrollPosition(window.scrollY);
       // Prevent body scroll
       document.body.style.overflow = 'hidden';
       document.documentElement.style.overflow = 'hidden';
@@ -138,7 +136,7 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
       className="bg-black/50 flex items-center justify-center z-50"
       style={{
         position: 'fixed',
-        top: `${scrollPosition}px`,
+        top: 0,
         left: 0,
         width: '100vw',
         height: '100vh',

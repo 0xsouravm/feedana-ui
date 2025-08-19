@@ -5,8 +5,11 @@ import ValueProposition from './components/ValueProposition';
 import FeaturedBoards from './components/FeaturedBoards';
 // import SocialProof from './components/SocialProof';
 import Footer from './components/Footer';
+import { useChainlinkScroll } from '../../hooks/useChainlinkScroll';
 
 const HomepageAnonymousBlockchainFeedbackPlatform = () => {
+  // Initialize Chainlink-style resistance scrolling
+  useChainlinkScroll();
   
   return (
     <div className="min-h-screen bg-background">

@@ -6,12 +6,13 @@ import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import WalletConnectionModal from '../../components/wallet/WalletConnectionModal';
 import { useChainlinkScroll } from '../../hooks/useChainlinkScroll';
+import { ipfsService } from '../../services/ipfsService';
 
 const BoardCreationStudio = () => {
   const navigate = useNavigate();
   
   // Wallet connection
-  const { connected, connecting } = useWallet();
+  const { connected, connecting, publicKey } = useWallet();
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   
   // Initialize Chainlink-style resistance scrolling
@@ -65,7 +66,10 @@ const BoardCreationStudio = () => {
 
   // Handle board creation
   const handleCreate = async () => {
+    console.log('handleCreate called, connected:', connected);
+    
     if (!connected) {
+      console.log('Wallet not connected, opening modal');
       setIsWalletModalOpen(true);
       return;
     }
@@ -74,14 +78,61 @@ const BoardCreationStudio = () => {
       return;
     }
 
+    if (!publicKey) {
+      console.error('Public key not available');
+      return;
+    }
+
     setIsDeploying(true);
     
-    // Simulate creation process
-    setTimeout(() => {
+    try {
+      // Generate unique board ID
+      const boardId = `0x${Date.now().toString(16)}${Math.random().toString(16).slice(2, 8)}`;
+      
+      // Prepare board data
+      const boardData = {
+        boardId,
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        creator: publicKey.toString(),
+        createdAt: new Date().toISOString(),
+        version: '1.0'
+      };
+
+      console.log('Creating board with data:', boardData);
+
+      let ipfsResult = null;
+      
+      // Try to upload to IPFS if available
+      if (ipfsService.isAvailable()) {
+        console.log('IPFS available, attempting upload...');
+        ipfsResult = await ipfsService.uploadBoardToIPFS(boardData);
+        
+        if (ipfsResult.success) {
+          console.log('Board uploaded to IPFS:', ipfsResult);
+          boardData.ipfsHash = ipfsResult.cid;
+          boardData.ipfsUrl = ipfsResult.url;
+        } else {
+          console.warn('IPFS upload failed, continuing without IPFS:', ipfsResult.error);
+        }
+      } else {
+        console.log('IPFS not available, creating board locally only');
+      }
+      
+      console.log('Board created successfully:', boardData);
+      
+      navigate('/feedback-theater-board-viewing', { 
+        state: boardData
+      });
+      
+    } catch (error) {
+      console.error('Error creating board:', error);
+      // Show user-friendly error message
+      alert('Failed to create board. Please try again.');
+    } finally {
       setIsDeploying(false);
-      // Navigate to feedback theater
-      navigate('/feedback-theater-board-viewing');
-    }, 2000);
+    }
   };
 
   return (

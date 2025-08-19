@@ -34,6 +34,12 @@ export const useChainlinkScroll = () => {
         return;
       }
       
+      // Don't interfere with text inputs, textareas, or contenteditable elements
+      const target = e.target;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true') {
+        return;
+      }
+      
       e.preventDefault();
 
       const delta = e.deltaY;
@@ -269,11 +275,22 @@ export const useChainlinkScroll = () => {
     // Sync scroll target with current position
     scrollTarget = window.scrollY;
 
+    // Prevent key events from interfering with input
+    const handleKeyDown = (e) => {
+      // Allow all keyboard input when focused on input elements
+      const target = e.target;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true') {
+        e.stopPropagation();
+        return true;
+      }
+    };
+
     // Add event listeners
     document.addEventListener('wheel', handleWheel, { passive: false });
     document.addEventListener('touchstart', handleTouchStart, { passive: true });
     document.addEventListener('touchmove', handleTouchMove, { passive: false });
     document.addEventListener('touchend', handleTouchEnd, { passive: true });
+    document.addEventListener('keydown', handleKeyDown, { passive: true, capture: true });
 
     // Cleanup
     return () => {
@@ -284,6 +301,7 @@ export const useChainlinkScroll = () => {
       document.removeEventListener('touchstart', handleTouchStart);
       document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleTouchEnd);
+      document.removeEventListener('keydown', handleKeyDown);
 
       if (animationFrame) {
         cancelAnimationFrame(animationFrame);

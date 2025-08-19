@@ -7,8 +7,11 @@ import SubmissionModal from './components/SubmissionModal';
 import BoardStats from './components/BoardStats';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
+import { useChainlinkScroll } from '../../hooks/useChainlinkScroll';
 
 const FeedbackTheaterBoardViewing = () => {
+  // Initialize Chainlink-style resistance scrolling
+  useChainlinkScroll();
   
   const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false);
   const [sortBy, setSortBy] = useState('newest');

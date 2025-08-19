@@ -9,6 +9,7 @@ import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 
 const FeedbackTheaterBoardViewing = () => {
+  
   const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false);
   const [sortBy, setSortBy] = useState('newest');
   const [filterBy, setFilterBy] = useState('all');
@@ -172,8 +173,10 @@ const FeedbackTheaterBoardViewing = () => {
               <div className="space-y-4">
                 {paginatedFeedback?.length > 0 ? (
                   <>
-                    {paginatedFeedback?.map((feedback) => (
-                      <FeedbackCard key={feedback?.id} feedback={feedback} />
+                    {paginatedFeedback?.map((feedback, index) => (
+                      <div key={feedback?.id} className="scroll-fade-in momentum-container" style={{transitionDelay: `${index * 0.05}s`}}>
+                        <FeedbackCard feedback={feedback} />
+                      </div>
                     ))}
                     
                     {/* Load More / Pagination */}

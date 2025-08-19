@@ -7,6 +7,7 @@ import FeaturedBoards from './components/FeaturedBoards';
 import Footer from './components/Footer';
 
 const HomepageAnonymousBlockchainFeedbackPlatform = () => {
+  
   return (
     <div className="min-h-screen bg-background">
       <Header />

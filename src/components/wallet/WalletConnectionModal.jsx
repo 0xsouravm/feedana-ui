@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletReadyState } from '@solana/wallet-adapter-base';
 import Icon from '../AppIcon';
@@ -9,6 +10,49 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState(null);
   const lastSelectedWallet = useRef(null);
+  const [scrollPosition, setScrollPosition] = useState(0);
+
+  // Capture scroll position when modal opens
+  useEffect(() => {
+    const preventDefault = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    };
+
+    if (isOpen) {
+      setScrollPosition(window.scrollY);
+      // Prevent body scroll
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      
+      // Disable Chainlink scroll system
+      window.modalScrollDisabled = true;
+      
+      // Add event listeners to prevent all scroll events
+      document.addEventListener('wheel', preventDefault, { passive: false });
+      document.addEventListener('touchmove', preventDefault, { passive: false });
+      document.addEventListener('keydown', (e) => {
+        if ([32, 33, 34, 35, 36, 37, 38, 39, 40].includes(e.keyCode)) {
+          preventDefault(e);
+        }
+      });
+      
+    } else {
+      // Restore body scroll
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+      window.modalScrollDisabled = false;
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+      window.modalScrollDisabled = false;
+      document.removeEventListener('wheel', preventDefault);
+      document.removeEventListener('touchmove', preventDefault);
+    };
+  }, [isOpen]);
 
   const handleWalletSelect = useCallback(async (walletName) => {
     if (isConnecting || connecting) return;
@@ -89,8 +133,18 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+  const modalContent = (
+    <div 
+      className="bg-black/50 flex items-center justify-center z-50"
+      style={{
+        position: 'fixed',
+        top: `${scrollPosition}px`,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        zIndex: 10000
+      }}
+    >
       <div className="glass-card p-6 rounded-2xl max-w-md w-full mx-4">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-foreground">
@@ -260,6 +314,8 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default WalletConnectionModal;

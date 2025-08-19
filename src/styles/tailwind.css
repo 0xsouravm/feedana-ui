@@ -75,6 +75,16 @@
     @apply bg-background text-foreground;
     font-family: 'Inter', sans-serif;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    
+    /* Enhanced Inertial Scrolling */
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: none;
+  }
+  
+  html {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: none;
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -88,9 +98,41 @@
 }
 
 @layer components {
+  /* Inertial Scroll Components */
+  .inertial-scroll {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer 10+ */
+  }
+  
+  .inertial-scroll::-webkit-scrollbar {
+    display: none; /* WebKit */
+  }
+  
+  .momentum-container {
+    transform: translateZ(0); /* Enable hardware acceleration */
+    will-change: transform, opacity;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .smooth-reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), 
+                transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .smooth-reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
   /* Glassmorphism Components */
   .glass-card {
     @apply backdrop-blur-xl bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-2xl;
+    transform: translateZ(0); /* Enable hardware acceleration for smooth scrolling */
+    will-change: transform;
   }
   
   /* Neomorphic Components */
@@ -175,6 +217,48 @@
   @keyframes float {
     0%, 100% { transform: translateY(0px); }
     50% { transform: translateY(-10px); }
+  }
+  
+  /* Scroll-based Animations */
+  .scroll-parallax {
+    transform: translate3d(0, 0, 0);
+    will-change: transform;
+  }
+  
+  .scroll-fade-in {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  
+  .scroll-fade-in.animate {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  .scroll-slide-up {
+    transform: translateY(60px);
+    opacity: 0;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  
+  .scroll-slide-up.animate {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  
+  .scroll-scale-in {
+    transform: scale(0.8);
+    opacity: 0;
+    transition: transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1),
+                opacity 0.7s ease-out;
+  }
+  
+  .scroll-scale-in.animate {
+    transform: scale(1);
+    opacity: 1;
   }
   
   /* Backdrop Utilities */

@@ -14,7 +14,7 @@ const Routes = () => {
       <ScrollToTop />
       <RouterRoutes>
         {/* Define your route here */}
-        <Route path="/" element={<BoardCreationStudio />} />
+        <Route path="/" element={<HomepageAnonymousBlockchainFeedbackPlatform />} />
         <Route path="/homepage-anonymous-blockchain-feedback-platform" element={<HomepageAnonymousBlockchainFeedbackPlatform />} />
         <Route path="/board-creation-studio" element={<BoardCreationStudio />} />
         <Route path="/feedback-theater-board-viewing" element={<FeedbackTheaterBoardViewing />} />

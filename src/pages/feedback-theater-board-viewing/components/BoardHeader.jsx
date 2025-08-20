@@ -6,8 +6,30 @@ const BoardHeader = ({ board, onSubmitFeedback }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const formatTimeAgo = (timeString) => {
-    // Simple implementation for demo
-    return timeString;
+    if (!timeString) return 'Unknown';
+    
+    const now = new Date();
+    const boardTime = new Date(timeString);
+    const diff = now - boardTime;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    const weeks = Math.floor(days / 7);
+    const months = Math.floor(days / 30);
+    const years = Math.floor(days / 365);
+
+    if (years > 0) return `${years} year${years > 1 ? 's' : ''} ago`;
+    if (months > 0) return `${months} month${months > 1 ? 's' : ''} ago`;
+    if (weeks > 0) return `${weeks} week${weeks > 1 ? 's' : ''} ago`;
+    if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+    if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+    return 'Just now';
+  };
+
+  const formatAddress = (address) => {
+    if (!address) return 'Unknown';
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
   const shouldShowExpansion = board?.description?.length > 200;
@@ -54,6 +76,19 @@ const BoardHeader = ({ board, onSubmitFeedback }) => {
                 {isExpanded ? 'Show less' : 'Read more'}
               </button>
             )}
+            
+            {/* Creator Info */}
+            {board?.creator && (
+              <div className="mt-4 p-3 bg-muted/10 rounded-lg border border-border/30">
+                <div className="flex items-center space-x-2 text-sm">
+                  <Icon name="User" size={14} className="text-accent" />
+                  <span className="text-muted-foreground">Created by:</span>
+                  <span className="font-mono text-foreground bg-muted/20 px-2 py-1 rounded text-xs">
+                    {formatAddress(board.creator)}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Guidelines */}
@@ -98,7 +133,7 @@ const BoardHeader = ({ board, onSubmitFeedback }) => {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Created</span>
-                <span className="font-medium text-foreground">{board?.createdAt}</span>
+                <span className="font-medium text-foreground">{formatTimeAgo(board?.createdAt)}</span>
               </div>
             </div>
           </div>

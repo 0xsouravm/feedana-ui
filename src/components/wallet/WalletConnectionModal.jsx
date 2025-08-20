@@ -13,10 +13,23 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
 
   // Prevent scrolling when modal is open
   useEffect(() => {
+    // Don't add any scroll prevention on board creation page
+    const isOnBoardCreationPage = window.location.pathname.includes('/board-creation-studio');
+    
     const preventDefault = (e) => {
       e.preventDefault();
       e.stopPropagation();
       return false;
+    };
+
+    const preventKeydown = (e) => {
+      // Don't prevent any keys on board creation page
+      if (isOnBoardCreationPage) return;
+      
+      // Only prevent scroll-related keys, not all keys (especially not space for input fields)
+      if ([33, 34, 35, 36, 37, 38, 39, 40].includes(e.keyCode)) {
+        preventDefault(e);
+      }
     };
 
     if (isOpen) {
@@ -27,14 +40,13 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
       // Disable Chainlink scroll system
       window.modalScrollDisabled = true;
       
-      // Add event listeners to prevent all scroll events
-      document.addEventListener('wheel', preventDefault, { passive: false });
-      document.addEventListener('touchmove', preventDefault, { passive: false });
-      document.addEventListener('keydown', (e) => {
-        if ([32, 33, 34, 35, 36, 37, 38, 39, 40].includes(e.keyCode)) {
-          preventDefault(e);
-        }
-      });
+      // Add event listeners to prevent scroll events but allow typing
+      // Don't add wheel/touch prevention on board creation page
+      if (!isOnBoardCreationPage) {
+        document.addEventListener('wheel', preventDefault, { passive: false });
+        document.addEventListener('touchmove', preventDefault, { passive: false });
+      }
+      document.addEventListener('keydown', preventKeydown, { passive: false });
       
     } else {
       // Restore body scroll
@@ -47,8 +59,10 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
       document.body.style.overflow = '';
       document.documentElement.style.overflow = '';
       window.modalScrollDisabled = false;
+      // Clean up event listeners (they may not have been added on board creation page)
       document.removeEventListener('wheel', preventDefault);
       document.removeEventListener('touchmove', preventDefault);
+      document.removeEventListener('keydown', preventKeydown);
     };
   }, [isOpen]);
 
@@ -69,9 +83,17 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
         throw new Error(`${walletName} is not installed. Please install it first.`);
       }
       
-      // Simple: just select and connect
+      // Select wallet first
       select(walletName);
+      
+      // Small delay to ensure wallet is selected
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Then connect
       await connect();
+      
+      // Small delay to ensure connection is established
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       onClose();
       

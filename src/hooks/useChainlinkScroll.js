@@ -2,10 +2,19 @@ import { useEffect } from 'react';
 
 export const useChainlinkScroll = () => {
   useEffect(() => {
+    // Check if we're on the board creation page - if so, disable completely
+    const isOnBoardCreationPage = window.location.pathname.includes('/board-creation-studio');
+    
+    if (isOnBoardCreationPage) {
+      console.log('Chainlink scroll disabled on board creation page');
+      return; // Exit early, no scroll handling
+    }
+    
     let isScrolling = false;
     let velocity = 0;
     let scrollTarget = window.scrollY;
     let animationFrame = null;
+    let isInputFocused = false;
 
     // Chainlink-style scroll constants
     const friction = 0.09; // Lower = more resistance (honey-like feel)
@@ -29,14 +38,8 @@ export const useChainlinkScroll = () => {
 
     // Handle wheel events with resistance
     const handleWheel = (e) => {
-      // Don't handle scroll if modal is open
-      if (window.modalScrollDisabled) {
-        return;
-      }
-      
-      // Don't interfere with text inputs, textareas, or contenteditable elements
-      const target = e.target;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true') {
+      // Don't handle scroll if modal is open or input is focused
+      if (window.modalScrollDisabled || isInputFocused || isInputCurrentlyFocused()) {
         return;
       }
       
@@ -83,8 +86,8 @@ export const useChainlinkScroll = () => {
     };
 
     const handleTouchMove = (e) => {
-      // Don't handle scroll if modal is open
-      if (window.modalScrollDisabled) {
+      // Don't handle scroll if modal is open or input is focused
+      if (window.modalScrollDisabled || isInputFocused || isInputCurrentlyFocused()) {
         return;
       }
       
@@ -275,13 +278,66 @@ export const useChainlinkScroll = () => {
     // Sync scroll target with current position
     scrollTarget = window.scrollY;
 
-    // Prevent key events from interfering with input
-    const handleKeyDown = (e) => {
-      // Allow all keyboard input when focused on input elements
+    // Track input focus state
+    const handleFocusIn = (e) => {
       const target = e.target;
       if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true') {
-        e.stopPropagation();
+        isInputFocused = true;
+        console.log('Input focused - Chainlink scroll disabled:', target.tagName, target.type || 'no-type');
+      }
+    };
+
+    const handleFocusOut = (e) => {
+      const target = e.target;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true') {
+        isInputFocused = false;
+        console.log('Input unfocused - Chainlink scroll enabled:', target.tagName);
+      }
+    };
+
+    // Also check on every wheel/touch event for safety
+    const isInputCurrentlyFocused = () => {
+      const activeElement = document.activeElement;
+      return activeElement && (
+        activeElement.tagName === 'INPUT' || 
+        activeElement.tagName === 'TEXTAREA' || 
+        activeElement.contentEditable === 'true' ||
+        activeElement.getAttribute('contenteditable') === 'true' ||
+        activeElement.isContentEditable
+      );
+    };
+
+    // Prevent key events from interfering with input
+    const handleKeyDown = (e) => {
+      const target = e.target;
+      const isTargetInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true';
+      const currentlyFocused = isInputCurrentlyFocused();
+      
+      // Debug logging for space key
+      if (e.code === 'Space') {
+        console.log('Space key pressed:', {
+          target: target.tagName,
+          isTargetInput,
+          isInputFocused,
+          currentlyFocused,
+          willPrevent: !isTargetInput && !isInputFocused && !currentlyFocused
+        });
+      }
+      
+      // Always allow keyboard input when target is an input field
+      if (isTargetInput) {
+        return true; // Don't prevent any keys for input fields
+      }
+      
+      // Also check if any input is currently focused (double check)
+      if (isInputFocused || currentlyFocused) {
         return true;
+      }
+      
+      // Only prevent scroll-related keys when not in input fields
+      const scrollKeys = ['Space', 'PageDown', 'PageUp', 'End', 'Home', 'ArrowUp', 'ArrowDown'];
+      if (scrollKeys.includes(e.code)) {
+        e.preventDefault();
       }
     };
 
@@ -290,7 +346,9 @@ export const useChainlinkScroll = () => {
     document.addEventListener('touchstart', handleTouchStart, { passive: true });
     document.addEventListener('touchmove', handleTouchMove, { passive: false });
     document.addEventListener('touchend', handleTouchEnd, { passive: true });
-    document.addEventListener('keydown', handleKeyDown, { passive: true, capture: true });
+    document.addEventListener('keydown', handleKeyDown, { passive: false });
+    document.addEventListener('focusin', handleFocusIn, { passive: true });
+    document.addEventListener('focusout', handleFocusOut, { passive: true });
 
     // Cleanup
     return () => {
@@ -302,6 +360,8 @@ export const useChainlinkScroll = () => {
       document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleTouchEnd);
       document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('focusin', handleFocusIn);
+      document.removeEventListener('focusout', handleFocusOut);
 
       if (animationFrame) {
         cancelAnimationFrame(animationFrame);

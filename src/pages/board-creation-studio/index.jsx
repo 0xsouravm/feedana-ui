@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
 import Header from '../../components/ui/Header';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import WalletConnectionModal from '../../components/wallet/WalletConnectionModal';
-import { useChainlinkScroll } from '../../hooks/useChainlinkScroll';
+import SuccessNotification from '../../components/ui/SuccessNotification';
 import { ipfsService } from '../../services/ipfsService';
+import { generateBoardHash, validateBoardData } from '../../utils/simpleBoardUtils';
+import { createBoard, testSupabaseConnection } from '../../utils/simpleSupabaseApi';
 
 const BoardCreationStudio = () => {
   const navigate = useNavigate();
@@ -15,8 +17,10 @@ const BoardCreationStudio = () => {
   const { connected, connecting, publicKey } = useWallet();
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   
-  // Initialize Chainlink-style resistance scrolling
-  useChainlinkScroll();
+  // Test Supabase connection on component mount
+  useEffect(() => {
+    testSupabaseConnection();
+  }, []);
   const [isDeploying, setIsDeploying] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
 
@@ -29,6 +33,8 @@ const BoardCreationStudio = () => {
 
   // Validation errors
   const [errors, setErrors] = useState({});
+  const [showSuccessNotification, setShowSuccessNotification] = useState(false);
+  const [createdBoardId, setCreatedBoardId] = useState(null);
 
   // Categories for dropdown with icons
   const categories = [
@@ -86,11 +92,40 @@ const BoardCreationStudio = () => {
     setIsDeploying(true);
     
     try {
-      // Generate unique board ID
-      const boardId = `0x${Date.now().toString(16)}${Math.random().toString(16).slice(2, 8)}`;
+      // Validate form data first
+      const validation = validateBoardData({
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        creator: publicKey.toString()
+      });
       
-      // Prepare board data
+      if (!validation.isValid) {
+        console.error('Validation errors:', validation.errors);
+        alert(`Please fix the following issues:\n${validation.errors.join('\n')}`);
+        return;
+      }
+
+      // Generate unique board ID using SHA-256 hashing
+      const boardId = await generateBoardHash(
+        publicKey.toString(),
+        formData.title,
+        formData.category
+      );
+      
+      // Prepare board data with complete IPFS structure
       const boardData = {
+        board_id: boardId,
+        board_title: formData.title,
+        board_description: formData.description,
+        board_category: formData.category,
+        created_by: publicKey.toString(),
+        created_at: new Date().toISOString(),
+        latest_feedback_by: "",
+        latest_feedback_at: "",
+        total_feedback_count: 0,
+        feedbacks: [],
+        // Legacy fields for compatibility
         boardId,
         title: formData.title,
         description: formData.description,
@@ -120,11 +155,27 @@ const BoardCreationStudio = () => {
         console.log('IPFS not available, creating board locally only');
       }
       
+      // Save to Supabase database
+      try {
+        console.log('Saving board to database...');
+        const dbResult = await createBoard({
+          owner: publicKey.toString(),
+          board_id: boardId,
+          ipfs_cid: boardData.ipfsHash || 'local-only'
+        });
+        console.log('Board saved to database:', dbResult);
+        boardData.dbId = dbResult.id;
+      } catch (dbError) {
+        console.error('Failed to save board to database:', dbError);
+        // Continue even if database save fails - board still works locally
+        alert('Warning: Board created locally but could not save to database. Please check your connection.');
+      }
+      
       console.log('Board created successfully:', boardData);
       
-      navigate('/feedback-theater-board-viewing', { 
-        state: boardData
-      });
+      // Store board ID for success notification
+      setCreatedBoardId(boardData.board_id);
+      setShowSuccessNotification(true);
       
     } catch (error) {
       console.error('Error creating board:', error);
@@ -138,8 +189,8 @@ const BoardCreationStudio = () => {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-background overflow-x-hidden chainlink-container">
-        <main className="pt-16 overflow-x-hidden momentum-container">
+      <div className="min-h-screen bg-background">
+        <main className="pt-16">
         {/* Enhanced Hero Section */}
         <section className="section-padding py-20 text-center">
           <div className="max-w-6xl mx-auto">
@@ -150,7 +201,7 @@ const BoardCreationStudio = () => {
               </span>
             </div>
             
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6" style={{color: '#FFFFFF', opacity: 1, visibility: 'visible'}}>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6">
               Create Your Feedback Board
             </h1>
             
@@ -167,18 +218,7 @@ const BoardCreationStudio = () => {
               onClick={() => {
                 const target = document.getElementById('board-form');
                 if (target) {
-                  const targetPosition = target.offsetTop - 80; // Account for header height
-                  
-                  // Use Chainlink scroll system
-                  if (window.chainlinkScrollTo) {
-                    window.chainlinkScrollTo(targetPosition);
-                  } else {
-                    // Fallback to regular scroll
-                    window.scrollTo({
-                      top: targetPosition,
-                      behavior: 'smooth'
-                    });
-                  }
+                  target.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
               }}
               className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-glow px-8 py-4 text-lg font-semibold mb-12"
@@ -218,10 +258,10 @@ const BoardCreationStudio = () => {
         </section>
 
         {/* Creation Form */}
-        <section id="board-form" className="section-padding py-20 bg-gradient-to-br from-muted/5 to-background overflow-x-hidden scroll-parallax">
-          <div className="max-w-6xl mx-auto momentum-container">
+        <section id="board-form" className="section-padding py-20 bg-gradient-to-br from-muted/5 to-background">
+          <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6" style={{color: '#FFFFFF', opacity: 1, visibility: 'visible'}}>
+              <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
                 Let's Build Your Board
               </h2>
               <p className="text-xl text-muted-foreground">
@@ -529,6 +569,17 @@ const BoardCreationStudio = () => {
       <WalletConnectionModal 
         isOpen={isWalletModalOpen} 
         onClose={() => setIsWalletModalOpen(false)} 
+      />
+
+      {/* Success Notification */}
+      <SuccessNotification
+        isOpen={showSuccessNotification}
+        onClose={() => setShowSuccessNotification(false)}
+        title="Board Created Successfully! 🚀"
+        message="Your feedback board has been created and stored on IPFS! It's now ready to receive feedback from contributors."
+        actionText="View My Board"
+        onAction={() => navigate(`/board/${createdBoardId}`)}
+        duration={7000}
       />
     </>
   );

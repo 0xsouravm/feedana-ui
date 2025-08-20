@@ -8,14 +8,21 @@ const FeedbackCard = ({ feedback }) => {
   
   const formatTimeAgo = (timestamp) => {
     const now = new Date();
-    const diff = now - new Date(timestamp);
+    const feedbackTime = new Date(timestamp);
+    const diff = now - feedbackTime;
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
+    const weeks = Math.floor(days / 7);
+    const months = Math.floor(days / 30);
+    const years = Math.floor(days / 365);
 
-    if (days > 0) return `${days}d ago`;
-    if (hours > 0) return `${hours}h ago`;
-    if (minutes > 0) return `${minutes}m ago`;
+    if (years > 0) return `${years} year${years > 1 ? 's' : ''} ago`;
+    if (months > 0) return `${months} month${months > 1 ? 's' : ''} ago`;
+    if (weeks > 0) return `${weeks} week${weeks > 1 ? 's' : ''} ago`;
+    if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+    if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
     return 'Just now';
   };
 
@@ -45,13 +52,16 @@ const FeedbackCard = ({ feedback }) => {
     setIsHelpful(!isHelpful);
   };
 
-  const shouldTruncate = feedback?.content?.length > 300;
-  const displayContent = isExpanded || !shouldTruncate 
-    ? feedback?.content 
-    : `${feedback?.content?.substring(0, 300)}...`;
+  // Check if content should be truncated - use character count and line count
+  const shouldTruncate = feedback?.content && (
+    feedback.content.length > 200 || // Long content
+    feedback.content.split('\n').length > 3 || // Multiple lines
+    feedback.content.split(' ').length > 30 // Many words
+  );
+  const displayContent = feedback?.content || '';
 
   return (
-    <div className="glass-card p-6 rounded-xl hover:shadow-glow transition-all duration-300">
+    <div className="glass-card p-6 rounded-xl hover:shadow-glow transition-all duration-300 relative z-0">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center space-x-3">
@@ -87,9 +97,11 @@ const FeedbackCard = ({ feedback }) => {
 
       {/* Content */}
       <div className="mb-4">
-        <p className="text-foreground leading-relaxed text-sm whitespace-pre-line">
+        <div className={`text-foreground leading-relaxed text-sm whitespace-pre-wrap break-words ${
+          !isExpanded ? 'line-clamp-3' : ''
+        }`}>
           {displayContent}
-        </p>
+        </div>
         {shouldTruncate && (
           <button
             onClick={toggleExpanded}
@@ -108,55 +120,27 @@ const FeedbackCard = ({ feedback }) => {
               key={index}
               className="px-2 py-1 bg-muted/30 text-muted-foreground rounded-md text-xs"
             >
-              #{tag}
+{tag}
             </span>
           ))}
         </div>
       )}
 
-      {/* Actions */}
+      {/* Footer */}
       <div className="flex items-center justify-between pt-4 border-t border-border/30">
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            iconName={isHelpful ? "Heart" : "Heart"}
-            iconPosition="left"
-            onClick={toggleHelpful}
-            className={`${isHelpful ? 'text-error' : 'text-muted-foreground'} hover:text-error transition-colors duration-200`}
-          >
-            <span className="text-xs">
-              {feedback?.helpful + (isHelpful ? 1 : 0)}
-            </span>
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            iconName="MessageCircle"
-            iconPosition="left"
-            className="text-muted-foreground hover:text-foreground transition-colors duration-200"
-          >
-            <span className="text-xs">Reply</span>
-          </Button>
+        <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+          <div className="flex items-center space-x-1">
+            <Icon name="Heart" size={12} />
+            <span>{feedback?.helpful} helpful</span>
+          </div>
+          <div className="flex items-center space-x-1">
+            <Icon name="Eye" size={12} />
+            <span>{feedback?.views} views</span>
+          </div>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            iconName="Share"
-            className="text-muted-foreground hover:text-foreground transition-colors duration-200"
-          >
-          </Button>
-          
-          <Button
-            variant="ghost"  
-            size="sm"
-            iconName="MoreHorizontal"
-            className="text-muted-foreground hover:text-foreground transition-colors duration-200"
-          >
-          </Button>
+        <div className="text-xs text-muted-foreground">
+          ID: {feedback?.id?.slice(-8)}
         </div>
       </div>
     </div>

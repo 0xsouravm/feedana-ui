@@ -10,8 +10,8 @@ const initializePinata = async () => {
   initializationPromise = (async () => {
     try {
       // Check environment variables first
-      const pinataJwt = import.meta.env.VITE_PINATA_JWT;
-      const gatewayUrl = import.meta.env.VITE_GATEWAY_URL;
+      const pinataJwt = import.meta.env.VITE_PINATA_JWT || import.meta.env.NEXT_PUBLIC_PINATA_JWT;
+      const gatewayUrl = import.meta.env.VITE_GATEWAY_URL || import.meta.env.NEXT_PUBLIC_GATEWAY_URL;
 
       if (!pinataJwt || !gatewayUrl) {
         console.warn('IPFS: Environment variables not set');
@@ -45,6 +45,9 @@ export const ipfsService = {
         throw new Error('IPFS service not available');
       }
 
+      // Get gateway URL
+      const gatewayUrl = import.meta.env.VITE_GATEWAY_URL || import.meta.env.NEXT_PUBLIC_GATEWAY_URL;
+
       const jsonContent = JSON.stringify(boardData, null, 2);
       const filename = `board_${boardData.boardId}_${Date.now()}.json`;
       
@@ -56,7 +59,7 @@ export const ipfsService = {
         success: true,
         cid: upload.cid,
         ipfsHash: upload.IpfsHash,
-        url: `https://${import.meta.env.VITE_GATEWAY_URL}/ipfs/${upload.cid}`
+        url: `https://${gatewayUrl}/ipfs/${upload.cid}`
       };
     } catch (error) {
       console.error('IPFS: Upload failed:', error);
@@ -91,8 +94,8 @@ export const ipfsService = {
 
   // Check if IPFS is available without initializing
   isAvailable() {
-    const pinataJwt = import.meta.env.VITE_PINATA_JWT;
-    const gatewayUrl = import.meta.env.VITE_GATEWAY_URL;
+    const pinataJwt = import.meta.env.VITE_PINATA_JWT || import.meta.env.NEXT_PUBLIC_PINATA_JWT;
+    const gatewayUrl = import.meta.env.VITE_GATEWAY_URL || import.meta.env.NEXT_PUBLIC_GATEWAY_URL;
     return !!(pinataJwt && gatewayUrl);
   }
 };

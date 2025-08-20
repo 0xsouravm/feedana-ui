@@ -42,7 +42,7 @@
   },
   "scripts": {
     "start": "vite",
-    "build": "vite build --output dist",
+    "build": "vite build --outDir dist",
     "serve": "vite preview"
   },
   "eslintConfig": {

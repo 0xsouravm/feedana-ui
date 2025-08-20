@@ -466,8 +466,8 @@ The error handling is also excellent. When something goes wrong, the system prov
               content: feedback.feedback_text || feedback.content,
               timestamp: new Date(feedback.created_at),
               sentiment: feedback.feedback_type || 'neutral',
-              helpful: Math.floor(Math.random() * 50) + 1, // Generate random helpful count
-              views: Math.floor(Math.random() * 200) + 50, // Generate random view count
+              // helpful: Math.floor(Math.random() * 50) + 1, // Generate random helpful count
+              // views: Math.floor(Math.random() * 200) + 50, // Generate random view count
               tags: feedback.tags || [], // Use stored tags from IPFS
               createdBy: feedback.created_by
             }));

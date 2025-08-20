@@ -38,15 +38,15 @@ const FilterControls = ({
   const sortOptions = [
     { value: 'newest', label: 'Newest First', icon: 'ArrowDown' },
     { value: 'oldest', label: 'Oldest First', icon: 'ArrowUp' },
-    { value: 'reward', label: 'Highest Reward', icon: 'Coins' },
-    { value: 'helpful', label: 'Most Helpful', icon: 'ThumbsUp' }
+    // { value: 'reward', label: 'Highest Reward', icon: 'Coins' },
+    // { value: 'helpful', label: 'Most Helpful', icon: 'ThumbsUp' }
   ];
 
   const filterOptions = [
     { value: 'all', label: 'All Feedback', count: totalCount },
-    { value: 'positive', label: 'Positive', count: 45 },
-    { value: 'neutral', label: 'Neutral', count: 23 },
-    { value: 'negative', label: 'Negative', count: 12 }
+    // { value: 'positive', label: 'Positive', count: 45 },
+    // { value: 'neutral', label: 'Neutral', count: 23 },
+    // { value: 'negative', label: 'Negative', count: 12 }
   ];
 
   return (

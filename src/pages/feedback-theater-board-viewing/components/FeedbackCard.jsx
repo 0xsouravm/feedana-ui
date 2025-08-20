@@ -73,12 +73,12 @@ const FeedbackCard = ({ feedback }) => {
               <span className="text-sm font-medium text-foreground">
                 Contributor
               </span>
-              <div className={`px-2 py-1 rounded-full text-xs border ${getSentimentColor(feedback?.sentiment)}`}>
+              {/* <div className={`px-2 py-1 rounded-full text-xs border ${getSentimentColor(feedback?.sentiment)}`}>
                 <div className="flex items-center space-x-1">
                   <Icon name={getSentimentIcon(feedback?.sentiment)} size={10} />
                   <span className="capitalize">{feedback?.sentiment}</span>
                 </div>
-              </div>
+              </div> */}
             </div>
             <div className="flex items-center space-x-2 text-xs text-muted-foreground mt-1">
               <Icon name="Clock" size={12} />
@@ -86,13 +86,13 @@ const FeedbackCard = ({ feedback }) => {
             </div>
           </div>
         </div>
-        
+{/*         
         <div className="flex items-center space-x-2">
           <div className="flex items-center space-x-1 text-xs text-muted-foreground">
             <Icon name="Eye" size={12} />
             <span>{feedback?.views}</span>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Content */}
@@ -128,7 +128,7 @@ const FeedbackCard = ({ feedback }) => {
 
       {/* Footer */}
       <div className="flex items-center justify-between pt-4 border-t border-border/30">
-        <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+        {/* <div className="flex items-center space-x-4 text-xs text-muted-foreground">
           <div className="flex items-center space-x-1">
             <Icon name="Heart" size={12} />
             <span>{feedback?.helpful} helpful</span>
@@ -137,7 +137,7 @@ const FeedbackCard = ({ feedback }) => {
             <Icon name="Eye" size={12} />
             <span>{feedback?.views} views</span>
           </div>
-        </div>
+        </div> */}
 
         <div className="text-xs text-muted-foreground">
           ID: {feedback?.id?.slice(-8)}

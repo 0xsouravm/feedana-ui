@@ -5,7 +5,8 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import NotFound from "./pages/NotFound";
 import HomepageAnonymousBlockchainFeedbackPlatform from './pages/home';
 import BoardCreationStudio from './pages/board-creation';
-import FeedbackTheaterBoardViewing from './pages/view-boards';
+import BoardsList from './pages/boards-list';
+import BoardView from './pages/board-view';
 
 const Routes = () => {
   return (
@@ -17,8 +18,8 @@ const Routes = () => {
         <Route path="/" element={<HomepageAnonymousBlockchainFeedbackPlatform />} />
         <Route path="/home" element={<HomepageAnonymousBlockchainFeedbackPlatform />} />
         <Route path="/board/create" element={<BoardCreationStudio />} />
-        <Route path="/board/all" element={<FeedbackTheaterBoardViewing />} />
-        <Route path="/board/:boardId" element={<FeedbackTheaterBoardViewing />} />
+        <Route path="/board/all" element={<BoardsList />} />
+        <Route path="/board/:boardId" element={<BoardView />} />
         <Route path="*" element={<NotFound />} />
       </RouterRoutes>
       </ErrorBoundary>

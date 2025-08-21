@@ -337,7 +337,7 @@ const FeaturedBoards = () => {
 
             {/* View All Boards Button */}
             <div className="text-center mb-12">
-              <Link to="/feedback-theater-board-viewing">
+              <Link to="/board/all">
                 <Button
                   variant="outline"
                   size="lg"
@@ -363,7 +363,7 @@ const FeaturedBoards = () => {
               <p className="text-muted-foreground mb-8">
                 Be the first to create a feedback board and start gathering valuable insights from your community.
               </p>
-              <Link to="/board-creation-studio">
+              <Link to="/board/create">
                 <Button
                   variant="default"
                   size="lg"
@@ -416,7 +416,7 @@ const FeaturedBoards = () => {
                 Fund your board, customize settings, and start collecting honest insights.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-                <Link to="/board-creation-studio">
+                <Link to="/board/create">
                   <Button
                     variant="default"
                     size="lg"
@@ -427,7 +427,7 @@ const FeaturedBoards = () => {
                     Create Your Board
                   </Button>
                 </Link>
-                <Link to="/feedback-theater-board-viewing">
+                <Link to="/board/all">
                   <Button
                     variant="outline"
                     size="lg"

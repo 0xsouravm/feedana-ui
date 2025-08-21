@@ -28,7 +28,7 @@ const Header = ({ isCollapsed = false }) => {
   }
 
   const handleCreateBoard = () => {
-    navigate('/board-creation-studio');
+    navigate('/board/create');
   };
 
   const handleWalletClick = () => {
@@ -47,12 +47,12 @@ const Header = ({ isCollapsed = false }) => {
   const navigationItems = [
     {
       name: 'Home',
-      path: '/homepage-anonymous-blockchain-feedback-platform',
+      path: '/home',
       icon: 'Home'
     },
     {
       name: 'Feedback Boards',
-      path: '/feedback-theater-board-viewing',
+      path: '/board/all',
       icon: 'Eye'
     }
   ];
@@ -76,7 +76,7 @@ const Header = ({ isCollapsed = false }) => {
           {/* Logo Section */}
           <div className="flex items-center">
             <Link 
-              to="/homepage-anonymous-blockchain-feedback-platform" 
+              to="/home" 
               className="flex items-center space-x-3 group"
             >
               <div className="relative">
@@ -132,7 +132,7 @@ const Header = ({ isCollapsed = false }) => {
               size="sm"
               iconName={connected ? "CheckCircle" : "Wallet"}
               iconPosition="left"
-              className={connected ? "text-success hover:text-success" : "text-muted-foreground hover:text-foreground"}
+              className={connected ? "text-success hover:bg-success hover:text-black" : "text-white hover:text-black"}
               onClick={handleWalletClick}
             >
               {connected ? `${publicKey?.toString().slice(0, 4)}...${publicKey?.toString().slice(-4)}` : "Connect Wallet"}

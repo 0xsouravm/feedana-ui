@@ -22,7 +22,7 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
   // Prevent scrolling when modal is open
   useEffect(() => {
     // Don't add any scroll prevention on board creation page
-    const isOnBoardCreationPage = window.location.pathname.includes('/board-creation-studio');
+    const isOnBoardCreationPage = window.location.pathname.includes('/board/create');
     
     const preventDefault = (e) => {
       e.preventDefault();

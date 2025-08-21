@@ -642,7 +642,7 @@ The error handling is also excellent. When something goes wrong, the system prov
               <Icon name="Search" size={64} className="text-muted-foreground mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-foreground mb-2">No boards found</h3>
               <p className="text-muted-foreground mb-6">Be the first to create a feedback board!</p>
-              <Link to="/board-creation-studio">
+              <Link to="/board/create">
                 <Button variant="default" iconName="Plus" iconPosition="left" className="bg-accent text-accent-foreground hover:bg-accent/90">
                   Create Your Board
                 </Button>

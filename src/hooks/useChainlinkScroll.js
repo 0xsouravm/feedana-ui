@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 export const useChainlinkScroll = () => {
   useEffect(() => {
     // Check if we're on the board creation page - if so, disable completely
-    const isOnBoardCreationPage = window.location.pathname.includes('/board-creation-studio');
+    const isOnBoardCreationPage = window.location.pathname.includes('/board/create');
     
     // Check if we're on mobile - disable chainlink scroll on mobile for better native scrolling
     const isMobile = window.innerWidth < 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);

@@ -9,8 +9,8 @@ const Footer = () => {
     {
       title: "Platform",
       links: [
-        { name: "Create Board", path: "/board-creation-studio" },
-        { name: "Feedback Theater", path: "/feedback-theater-board-viewing" },
+        { name: "Create Board", path: "/board/create" },
+        { name: "Feedback Theater", path: "/board/all" },
         { name: "Privacy Academy", path: "#" },
         { name: "Community Hub", path: "#" }
       ]
@@ -65,7 +65,7 @@ const Footer = () => {
         <div className="grid lg:grid-cols-6 gap-8">
           {/* Brand Section */}
           <div className="lg:col-span-2 space-y-6">
-            <Link to="/homepage-anonymous-blockchain-feedback-platform" className="flex items-center space-x-3 group">
+            <Link to="/home" className="flex items-center space-x-3 group">
               <img 
                 src="/assets/images/logo.svg" 
                 alt="Feedana Logo" 

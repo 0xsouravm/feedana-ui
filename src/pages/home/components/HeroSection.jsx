@@ -79,7 +79,7 @@ const HeroSection = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-6">
-            <Link to="/board-creation-studio">
+            <Link to="/board/create">
               <Button
                 variant="default"
                 size="lg"
@@ -91,15 +91,15 @@ const HeroSection = () => {
               </Button>
             </Link>
             
-            <Link to="/feedback-theater-board-viewing">
+            <Link to="/board/all">
               <Button
                 variant="outline"
                 size="lg"
                 iconName="Eye"
                 iconPosition="left"
-                className="border-accent/30 text-accent hover:bg-accent/10 px-8 py-4 text-lg"
+                className="border-accent/30 text-accent hover:bg-accent hover:text-accent-foreground px-8 py-4 text-lg"
               >
-                View Example
+                View Boards
               </Button>
             </Link>
           </div>

@@ -172,7 +172,7 @@ const Footer = () => {
           </div>
         </div>
       </div>
-      {/* Blockchain Network Status */}
+      {/* Blockchain Network Status
       <div className="border-t border-border/50 bg-muted/5">
         <div className="container-padding max-w-7xl mx-auto py-4">
           <div className="flex items-center justify-center space-x-8 text-xs text-muted-foreground">
@@ -194,7 +194,7 @@ const Footer = () => {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
     </footer>
   );
 };

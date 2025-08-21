@@ -48,6 +48,12 @@ const BoardHeader = ({ board, onSubmitFeedback }) => {
                 {board?.title}
               </h1>
               <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
+                {board?.category && (
+                  <div className="flex items-center space-x-1">
+                    <Icon name="Tag" size={14} />
+                    <span className="font-medium text-accent">{board.category}</span>
+                  </div>
+                )}
                 <div className="flex items-center space-x-1">
                   <Icon name="Calendar" size={14} />
                   <span>Created {formatTimeAgo(board?.createdAt)}</span>

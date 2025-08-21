@@ -5,8 +5,11 @@ export const useChainlinkScroll = () => {
     // Check if we're on the board creation page - if so, disable completely
     const isOnBoardCreationPage = window.location.pathname.includes('/board-creation-studio');
     
-    if (isOnBoardCreationPage) {
-      console.log('Chainlink scroll disabled on board creation page');
+    // Check if we're on mobile - disable chainlink scroll on mobile for better native scrolling
+    const isMobile = window.innerWidth < 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isOnBoardCreationPage || isMobile) {
+      console.log('Chainlink scroll disabled:', { isOnBoardCreationPage, isMobile });
       return; // Exit early, no scroll handling
     }
     

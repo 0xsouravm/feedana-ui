@@ -4,6 +4,7 @@ import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import { getAllBoards } from '../../../utils/simpleSupabaseApi';
 import ipfsFetcher from '../../../utils/ipfsFetcher';
+import ShareModal from '../../feedback-theater-board-viewing/components/ShareModal';
 
 const FeaturedBoards = () => {
   const [timeRemaining, setTimeRemaining] = useState({});
@@ -11,6 +12,8 @@ const FeaturedBoards = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedDescriptions, setExpandedDescriptions] = useState({});
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [selectedBoard, setSelectedBoard] = useState(null);
 
   // Toggle description expansion
   const toggleDescription = (boardId) => {
@@ -18,6 +21,17 @@ const FeaturedBoards = () => {
       ...prev,
       [boardId]: !prev[boardId]
     }));
+  };
+
+  // Handle share board functionality
+  const handleShareBoard = (board) => {
+    setSelectedBoard(board);
+    setShareModalOpen(true);
+  };
+
+  const handleCloseShareModal = () => {
+    setShareModalOpen(false);
+    setSelectedBoard(null);
   };
 
   // Static fallback boards in case of loading issues
@@ -225,14 +239,6 @@ const FeaturedBoards = () => {
             </div>
           )}
           
-          {error && !isLoading && (
-            <div className="glass-card p-4 rounded-xl border border-warning/20 bg-warning/10 mt-8 max-w-md mx-auto">
-              <div className="flex items-center space-x-2">
-                <Icon name="AlertTriangle" size={16} className="text-warning" />
-                <span className="text-sm text-warning">Using demo data - {error}</span>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Featured Boards Grid */}
@@ -316,6 +322,12 @@ const FeaturedBoards = () => {
                       variant="outline"
                       iconName="Share"
                       className="border-accent/30 text-accent hover:bg-accent/10"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleShareBoard(board);
+                      }}
+                      title="Share board"
                     >
                     </Button>
                   </div>
@@ -430,6 +442,13 @@ const FeaturedBoards = () => {
             </div>
           </div>
         )}
+
+        {/* Share Modal */}
+        <ShareModal
+          isOpen={shareModalOpen}
+          onClose={handleCloseShareModal}
+          board={selectedBoard}
+        />
       </div>
     </section>
   );

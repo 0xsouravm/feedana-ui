@@ -153,20 +153,38 @@ The error handling is also excellent. When something goes wrong, the system prov
         setBoardsError(null);
         
         console.log('Fetching all boards for board listing page...');
-        const supabaseBoards = await getAllBoards(50); // Get more boards for the listing page
+        
+        let supabaseBoards = [];
+        try {
+          supabaseBoards = await getAllBoards(50); // Get more boards for the listing page
+        } catch (fetchError) {
+          console.warn('Failed to fetch from Supabase, using empty array:', fetchError.message);
+          // Don't throw error, just use empty array
+          supabaseBoards = [];
+        }
         
         if (!supabaseBoards || supabaseBoards.length === 0) {
-          console.log('No boards found in database');
+          console.log('No boards found in database, showing empty state');
           setAllBoards([]);
           return;
         }
         
         // Fetch IPFS data for boards
-        const ipfsResults = await ipfsFetcher.fetchMultipleBoardData(
-          supabaseBoards
-            .filter(board => board.ipfs_cid && board.ipfs_cid !== 'local-only')
-            .map(board => board.ipfs_cid)
-        );
+        let ipfsResults = [];
+        try {
+          if (ipfsFetcher.isAvailable()) {
+            ipfsResults = await ipfsFetcher.fetchMultipleBoardData(
+              supabaseBoards
+                .filter(board => board.ipfs_cid && board.ipfs_cid !== 'local-only')
+                .map(board => board.ipfs_cid)
+            );
+          } else {
+            console.log('IPFS not available, using database data only');
+          }
+        } catch (ipfsError) {
+          console.warn('IPFS fetch failed, using database data only:', ipfsError.message);
+          ipfsResults = [];
+        }
         
         const ipfsDataMap = {};
         ipfsResults.forEach(result => {
@@ -233,8 +251,10 @@ The error handling is also excellent. When something goes wrong, the system prov
         
       } catch (err) {
         console.error('Error fetching all boards:', err);
-        setBoardsError(err.message);
+        // Don't show error for network failures, just show empty state
+        console.log('Showing empty state due to fetch error');
         setAllBoards([]);
+        setBoardsError(null); // Don't show error message to user
       } finally {
         setIsBoardsLoading(false);
       }
@@ -256,24 +276,27 @@ The error handling is also excellent. When something goes wrong, the system prov
       };
     }
 
-    const uniqueContributors = new Set(realFeedback.map(f => f.createdBy)).size;
+    const uniqueContributors = new Set((realFeedback || []).map(f => f?.createdBy).filter(Boolean)).size;
     
     // Calculate sentiment distribution
-    const sentimentCounts = realFeedback.reduce((acc, feedback) => {
-      acc[feedback.sentiment] = (acc[feedback.sentiment] || 0) + 1;
+    const sentimentCounts = (realFeedback || []).reduce((acc, feedback) => {
+      if (feedback?.sentiment) {
+        acc[feedback.sentiment] = (acc[feedback.sentiment] || 0) + 1;
+      }
       return acc;
     }, {});
 
     // Calculate average response time (simulate based on feedback frequency)
     const now = Date.now();
-    const recentFeedbacks = realFeedback.filter(f => 
-      (now - f.timestamp.getTime()) < 7 * 24 * 60 * 60 * 1000 // Last 7 days
+    const recentFeedbacks = (realFeedback || []).filter(f => 
+      f?.timestamp && (now - new Date(f.timestamp).getTime()) < 7 * 24 * 60 * 60 * 1000 // Last 7 days
     );
     const avgResponseTime = recentFeedbacks.length > 1 ? '1.2h' : '2.5h';
 
     // Generate recent activity from real feedback
-    const recentActivity = realFeedback
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+    const recentActivity = (realFeedback || [])
+      .filter(f => f?.timestamp)
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .slice(0, 4)
       .map(feedback => {
         const timeAgo = getTimeAgo(feedback.timestamp);
@@ -324,31 +347,33 @@ The error handling is also excellent. When something goes wrong, the system prov
   // Filter and sort feedback - use real feedback when available
   const feedbackToUse = realFeedback.length > 0 ? realFeedback : [];
   
-  const filteredFeedback = feedbackToUse?.filter(feedback => {
+  const filteredFeedback = (feedbackToUse || []).filter(feedback => {
+    if (!feedback) return false;
     const matchesFilter = filterBy === 'all' || feedback?.sentiment === filterBy;
     const matchesSearch = searchQuery === '' || 
       feedback?.content?.toLowerCase()?.includes(searchQuery?.toLowerCase()) ||
-      feedback?.tags?.some(tag => tag?.toLowerCase()?.includes(searchQuery?.toLowerCase()));
+      (feedback?.tags && Array.isArray(feedback.tags) && feedback.tags.some(tag => tag?.toLowerCase()?.includes(searchQuery?.toLowerCase())));
     
     return matchesFilter && matchesSearch;
   });
 
-  const sortedFeedback = [...filteredFeedback]?.sort((a, b) => {
+  const sortedFeedback = (filteredFeedback || []).sort((a, b) => {
+    if (!a || !b) return 0;
     switch (sortBy) {
       case 'newest':
-        return new Date(b.timestamp) - new Date(a.timestamp);
+        return new Date(b.timestamp || 0) - new Date(a.timestamp || 0);
       case 'oldest':
-        return new Date(a.timestamp) - new Date(b.timestamp);
+        return new Date(a.timestamp || 0) - new Date(b.timestamp || 0);
       case 'helpful':
-        return b?.helpful - a?.helpful;
+        return (b?.helpful || 0) - (a?.helpful || 0);
       default:
         return 0;
     }
   });
 
-  const totalPages = Math.ceil(sortedFeedback?.length / itemsPerPage);
+  const totalPages = Math.ceil((sortedFeedback?.length || 0) / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedFeedback = sortedFeedback?.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedFeedback = (sortedFeedback || []).slice(startIndex, startIndex + itemsPerPage);
 
   const handleSubmitFeedback = () => {
     setIsSubmissionModalOpen(true);
@@ -437,7 +462,17 @@ The error handling is also excellent. When something goes wrong, the system prov
         console.log('Fetching board feedback from database and IPFS...');
         
         // Get board data from database first
-        const boardDbData = await getBoardById(selectedBoard.id);
+        let boardDbData = null;
+        try {
+          boardDbData = await getBoardById(selectedBoard.id);
+        } catch (dbError) {
+          console.warn('Failed to fetch board from database:', dbError.message);
+          // Continue with empty state instead of showing error
+          setRealFeedback([]);
+          setBoardIPFSData(null);
+          return;
+        }
+        
         if (!boardDbData) {
           console.log('Board not found in database');
           setRealFeedback([]);
@@ -450,7 +485,17 @@ The error handling is also excellent. When something goes wrong, the system prov
         // Fetch board data from IPFS if CID exists
         if (boardDbData.ipfs_cid && boardDbData.ipfs_cid !== 'local-only') {
           console.log('Fetching board data from IPFS with CID:', boardDbData.ipfs_cid);
-          const ipfsData = await ipfsFetcher.fetchBoardData(boardDbData.ipfs_cid);
+          let ipfsData = null;
+          try {
+            if (ipfsFetcher.isAvailable()) {
+              ipfsData = await ipfsFetcher.fetchBoardData(boardDbData.ipfs_cid);
+            } else {
+              console.log('IPFS not available, using database data only');
+            }
+          } catch (ipfsError) {
+            console.warn('IPFS fetch failed for board data:', ipfsError.message);
+            ipfsData = null;
+          }
           
           if (ipfsData) {
             console.log('Successfully fetched IPFS data:', ipfsData);
@@ -486,7 +531,9 @@ The error handling is also excellent. When something goes wrong, the system prov
         
       } catch (error) {
         console.error('Error fetching board feedback:', error);
-        setFeedbackError(error.message);
+        // Don't show error to user, just use empty state
+        console.log('Using empty feedback state due to fetch error');
+        setFeedbackError(null);
         setRealFeedback([]);
         setBoardIPFSData(null);
       } finally {
@@ -516,14 +563,7 @@ The error handling is also excellent. When something goes wrong, the system prov
           </div>
         )}
         
-        {boardsError && !isBoardsLoading && (
-          <div className="glass-card p-4 rounded-xl border border-error/20 bg-error/10 mt-8 max-w-md mx-auto">
-            <div className="flex items-center space-x-2">
-              <Icon name="AlertTriangle" size={16} className="text-error" />
-              <span className="text-sm text-error">Error loading boards - {boardsError}</span>
-            </div>
-          </div>
-        )}
+        {/* Removed error display - just show empty state gracefully */}
       </div>
       
       {!isBoardsLoading && (

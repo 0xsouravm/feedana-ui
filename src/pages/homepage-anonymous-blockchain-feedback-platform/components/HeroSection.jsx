@@ -19,8 +19,8 @@ const HeroSection = () => {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background inertial-scroll scroll-parallax">
-      {/* DotGrid Background */}
-      <div className="absolute inset-0 z-0">
+      {/* DotGrid Background - Hidden on mobile */}
+      <div className="absolute inset-0 z-0 hidden md:block">
         <DotGrid
           dotSize={4}
           gap={15}

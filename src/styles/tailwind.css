@@ -76,15 +76,19 @@
     font-family: 'Inter', sans-serif;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     
-    /* Enhanced Inertial Scrolling */
+    /* Enhanced Mobile Scrolling */
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior: none;
+    overscroll-behavior-x: none;
+    overscroll-behavior-y: auto;
+    touch-action: pan-y;
   }
   
   html {
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior: none;
+    overscroll-behavior-x: none;
+    overscroll-behavior-y: auto;
+    touch-action: manipulation;
   }
   
   h1, h2, h3, h4, h5, h6 {

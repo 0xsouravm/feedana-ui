@@ -5,6 +5,35 @@ import Button from '../../../components/ui/Button';
 const ShareModal = ({ isOpen, onClose, board, boardUrl }) => {
   const [copied, setCopied] = useState(false);
   const [shareMethod, setShareMethod] = useState('link');
+
+  // Prevent background scrolling when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      // Save current scroll position
+      const scrollY = window.scrollY;
+      
+      // Prevent scrolling
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      
+      return () => {
+        // Restore scrolling
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.overflow = '';
+        document.documentElement.style.overflow = '';
+        
+        // Restore scroll position
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [isOpen]);
   
   const fullUrl = boardUrl || `${window.location.origin}/board/${board?.id}`;
   const encodedUrl = encodeURIComponent(fullUrl);
@@ -166,59 +195,53 @@ const ShareModal = ({ isOpen, onClose, board, boardUrl }) => {
               </p>
               
               <div className="grid grid-cols-2 gap-3">
-                <Button
-                  variant="outline"
+                <button
                   onClick={() => handleSocialShare('twitter')}
-                  className="justify-start border-blue-500/20 hover:bg-blue-500/10 text-blue-500"
+                  className="flex items-center justify-start h-12 px-4 py-3 rounded-lg bg-[#1DA1F2] hover:bg-[#1a91da] text-white transition-all duration-200 font-medium shadow-md hover:shadow-lg"
                 >
-                  <Icon name="Twitter" size={16} className="mr-2" />
+                  <Icon name="Twitter" size={18} className="mr-3" />
                   Twitter
-                </Button>
+                </button>
                 
-                <Button
-                  variant="outline"
+                <button
                   onClick={() => handleSocialShare('facebook')}
-                  className="justify-start border-blue-600/20 hover:bg-blue-600/10 text-blue-600"
+                  className="flex items-center justify-start h-12 px-4 py-3 rounded-lg bg-[#4267B2] hover:bg-[#365899] text-white transition-all duration-200 font-medium shadow-md hover:shadow-lg"
                 >
-                  <Icon name="Facebook" size={16} className="mr-2" />
+                  <Icon name="Facebook" size={18} className="mr-3" />
                   Facebook
-                </Button>
+                </button>
                 
-                <Button
-                  variant="outline"
+                <button
                   onClick={() => handleSocialShare('linkedin')}
-                  className="justify-start border-blue-700/20 hover:bg-blue-700/10 text-blue-700"
+                  className="flex items-center justify-start h-12 px-4 py-3 rounded-lg bg-[#0077B5] hover:bg-[#005885] text-white transition-all duration-200 font-medium shadow-md hover:shadow-lg"
                 >
-                  <Icon name="Linkedin" size={16} className="mr-2" />
+                  <Icon name="Linkedin" size={18} className="mr-3" />
                   LinkedIn
-                </Button>
+                </button>
                 
-                <Button
-                  variant="outline"
+                <button
                   onClick={() => handleSocialShare('reddit')}
-                  className="justify-start border-orange-500/20 hover:bg-orange-500/10 text-orange-500"
+                  className="flex items-center justify-start h-12 px-4 py-3 rounded-lg bg-[#FF4500] hover:bg-[#e03d00] text-white transition-all duration-200 font-medium shadow-md hover:shadow-lg"
                 >
-                  <Icon name="MessageCircle" size={16} className="mr-2" />
+                  <Icon name="MessageCircle" size={18} className="mr-3" />
                   Reddit
-                </Button>
+                </button>
                 
-                <Button
-                  variant="outline"
+                <button
                   onClick={() => handleSocialShare('whatsapp')}
-                  className="justify-start border-green-500/20 hover:bg-green-500/10 text-green-500"
+                  className="flex items-center justify-start h-12 px-4 py-3 rounded-lg bg-[#25D366] hover:bg-[#20bd5a] text-white transition-all duration-200 font-medium shadow-md hover:shadow-lg"
                 >
-                  <Icon name="MessageSquare" size={16} className="mr-2" />
+                  <Icon name="MessageSquare" size={18} className="mr-3" />
                   WhatsApp
-                </Button>
+                </button>
                 
-                <Button
-                  variant="outline"
+                <button
                   onClick={() => handleSocialShare('telegram')}
-                  className="justify-start border-blue-400/20 hover:bg-blue-400/10 text-blue-400"
+                  className="flex items-center justify-start h-12 px-4 py-3 rounded-lg bg-[#0088CC] hover:bg-[#0077b3] text-white transition-all duration-200 font-medium shadow-md hover:shadow-lg"
                 >
-                  <Icon name="Send" size={16} className="mr-2" />
+                  <Icon name="Send" size={18} className="mr-3" />
                   Telegram
-                </Button>
+                </button>
               </div>
             </div>
           )}

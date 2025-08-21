@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useWallet } from '@solana/wallet-adapter-react';
 import Icon from '../AppIcon';
 import Button from './Button';
@@ -10,19 +10,34 @@ const Header = ({ isCollapsed = false }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   
   // Use wallet hook with error handling
   let connected = false;
   let publicKey = null;
+  let disconnect = null;
   
   try {
     const walletState = useWallet();
     connected = walletState.connected || false;
     publicKey = walletState.publicKey || null;
+    disconnect = walletState.disconnect || null;
   } catch (error) {
     console.error('Wallet hook error:', error);
     // Continue with default values
   }
+
+  const handleCreateBoard = () => {
+    navigate('/board-creation-studio');
+  };
+
+  const handleWalletClick = () => {
+    if (connected && disconnect) {
+      disconnect();
+    } else {
+      setIsWalletModalOpen(true);
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -122,7 +137,7 @@ const Header = ({ isCollapsed = false }) => {
               iconName={connected ? "CheckCircle" : "Wallet"}
               iconPosition="left"
               className={connected ? "text-success hover:text-success" : "text-muted-foreground hover:text-foreground"}
-              onClick={() => setIsWalletModalOpen(true)}
+              onClick={handleWalletClick}
             >
               {connected ? `${publicKey?.toString().slice(0, 4)}...${publicKey?.toString().slice(-4)}` : "Connect Wallet"}
             </Button>
@@ -133,6 +148,7 @@ const Header = ({ isCollapsed = false }) => {
               iconName="Plus"
               iconPosition="left"
               className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-glow"
+              onClick={handleCreateBoard}
             >
               Create Board
             </Button>
@@ -177,7 +193,7 @@ const Header = ({ isCollapsed = false }) => {
                   iconPosition="left"
                   onClick={() => {
                     setIsMobileMenuOpen(false);
-                    setIsWalletModalOpen(true);
+                    handleWalletClick();
                   }}
                 >
                   {connected ? `${publicKey?.toString().slice(0, 4)}...${publicKey?.toString().slice(-4)}` : "Connect Wallet"}
@@ -189,7 +205,10 @@ const Header = ({ isCollapsed = false }) => {
                   iconName="Plus"
                   iconPosition="left"
                   className="bg-accent text-accent-foreground hover:bg-accent/90"
-                  onClick={() => setIsMobileMenuOpen(false)}
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    handleCreateBoard();
+                  }}
                 >
                   Create Board
                 </Button>

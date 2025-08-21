@@ -4,7 +4,7 @@ export const ipfsFetcher = {
   getGatewayUrl() {
     const gatewayUrl = import.meta.env.VITE_GATEWAY_URL || import.meta.env.NEXT_PUBLIC_GATEWAY_URL;
     if (!gatewayUrl) {
-      console.warn('Gateway URL not found in environment variables');
+      console.warn('Gateway URL not found in environment variables, IPFS features disabled');
       return null;
     }
     return `https://${gatewayUrl}/ipfs`;
@@ -26,10 +26,23 @@ export const ipfsFetcher = {
       const url = `${gatewayUrl}/${cid}`;
       console.log('Fetching board data from IPFS:', url);
 
-      const response = await fetch(url);
+      // Create timeout controller
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
-        throw new Error(`IPFS fetch failed: ${response.status} ${response.statusText}`);
+        console.warn(`IPFS fetch failed: ${response.status} ${response.statusText}`);
+        return null;
       }
 
       const boardData = await response.json();
@@ -37,7 +50,11 @@ export const ipfsFetcher = {
       
       return boardData;
     } catch (error) {
-      console.error('Error fetching board data from IPFS:', error);
+      if (error.name === 'AbortError') {
+        console.warn('IPFS fetch timeout for CID:', cid);
+      } else {
+        console.warn('IPFS fetch error for CID:', cid, error.message);
+      }
       return null; // Return null instead of throwing to handle gracefully
     }
   },

@@ -23,6 +23,35 @@ const SubmissionModal = ({ isOpen, onClose, board, onSuccess }) => {
   const maxChars = 2000;
   const minChars = 50;
 
+  // Prevent background scrolling when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      // Save current scroll position
+      const scrollY = window.scrollY;
+      
+      // Prevent scrolling
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      
+      return () => {
+        // Restore scrolling
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.overflow = '';
+        document.documentElement.style.overflow = '';
+        
+        // Restore scroll position
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     setCharCount(content?.length || 0);
     
@@ -182,19 +211,19 @@ const SubmissionModal = ({ isOpen, onClose, board, onSuccess }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       ></div>
       {/* Modal */}
-      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto glass-card rounded-3xl shadow-2xl">
+      <div className="relative w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto glass-card rounded-2xl sm:rounded-3xl shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between p-8 border-b border-border/30">
+        <div className="flex items-center justify-between p-4 sm:p-8 border-b border-border/30">
           <div>
-            <h2 className="text-2xl font-bold text-foreground">Submit Your Feedback</h2>
-            <p className="text-muted-foreground mt-2">
+            <h2 className="text-xl sm:text-2xl font-bold text-foreground">Submit Your Feedback</h2>
+            <p className="text-muted-foreground mt-1 sm:mt-2 text-sm sm:text-base">
               Share your thoughts and help improve this project
             </p>
           </div>
@@ -207,7 +236,7 @@ const SubmissionModal = ({ isOpen, onClose, board, onSuccess }) => {
         </div>
 
         {/* Content */}
-        <div className="p-8 space-y-8">
+        <div className="p-4 sm:p-8 space-y-6 sm:space-y-8">
           {/* Wallet Info */}
           {!connected ? (
             <div className="bg-warning/10 border border-warning/20 rounded-xl p-4">
@@ -232,8 +261,8 @@ const SubmissionModal = ({ isOpen, onClose, board, onSuccess }) => {
           )}
 
           {/* Feedback Editor */}
-          <div className="space-y-4">
-            <label className="text-lg font-semibold text-foreground">
+          <div className="space-y-3 sm:space-y-4">
+            <label className="text-base sm:text-lg font-semibold text-foreground">
               Your Feedback *
             </label>
             <div className="relative">
@@ -247,7 +276,7 @@ const SubmissionModal = ({ isOpen, onClose, board, onSuccess }) => {
                   }
                 }}
                 placeholder="Share your honest thoughts and feedback. Be specific about what works well and what could be improved..."
-                className={`w-full h-48 px-6 py-4 bg-input border-2 rounded-2xl text-foreground placeholder-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-accent transition-all duration-200 text-lg ${
+                className={`w-full h-32 sm:h-48 px-4 sm:px-6 py-3 sm:py-4 bg-input border-2 rounded-xl sm:rounded-2xl text-foreground placeholder-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-accent transition-all duration-200 text-sm sm:text-lg ${
                   charCount > maxChars ? 'border-error focus:border-error' : 'border-border focus:border-accent'
                 }`}
                 maxLength={maxChars}
@@ -268,32 +297,28 @@ const SubmissionModal = ({ isOpen, onClose, board, onSuccess }) => {
               <p className="text-sm text-muted-foreground font-medium">
                 Minimum {minChars} characters required
               </p>
-              <div className={`flex items-center gap-1 text-sm ${getSentimentColor(sentiment)}`}>
-                <Icon name={getSentimentIcon(sentiment)} size={14} />
-                <span className="capitalize font-medium">Sentiment: {sentiment}</span>
-              </div>
             </div>
           </div>
 
           {/* Tags */}
-          <div className="space-y-4">
-            <label className="text-lg font-semibold text-foreground">
+          <div className="space-y-3 sm:space-y-4">
+            <label className="text-base sm:text-lg font-semibold text-foreground">
               Tags (Optional)
             </label>
-            <div className="flex gap-3">
+            <div className="flex gap-2 sm:gap-3">
               <input
                 type="text"
                 value={tagInput}
                 onChange={(e) => setTagInput(e?.target?.value)}
                 onKeyPress={(e) => e?.key === 'Enter' && addTag()}
-                placeholder="Add a tag (e.g., ui, performance, bug)..."
-                className="flex-1 px-4 py-3 bg-input border-2 border-border rounded-2xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200"
+                placeholder="Add a tag..."
+                className="flex-1 px-3 sm:px-4 py-2 sm:py-3 bg-input border-2 border-border rounded-xl sm:rounded-2xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition-all duration-200 text-sm sm:text-base"
               />
               <Button
                 variant="outline"
                 onClick={addTag}
                 disabled={!tagInput?.trim() || tags?.length >= 5}
-                className="px-6 py-3 border-2 border-border rounded-2xl hover:border-accent/50 transition-all duration-200"
+                className="px-4 sm:px-6 py-2 sm:py-3 border-2 border-border rounded-xl sm:rounded-2xl hover:border-accent/50 transition-all duration-200 text-sm sm:text-base"
               >
                 Add
               </Button>
@@ -331,16 +356,16 @@ const SubmissionModal = ({ isOpen, onClose, board, onSuccess }) => {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-8 border-t border-border/30">
-          <div className="text-sm text-muted-foreground font-medium">
+        <div className="flex flex-col sm:flex-row items-center justify-between p-4 sm:p-8 border-t border-border/30 gap-4 sm:gap-0">
+          <div className="text-xs sm:text-sm text-muted-foreground font-medium text-center sm:text-left">
             Submission will be processed immediately
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
             <Button
               variant="outline"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-6 py-3 border-2 border-border rounded-2xl hover:border-accent/50 transition-all duration-200"
+              className="flex-1 sm:flex-none px-4 sm:px-6 py-2 sm:py-3 border-2 border-border rounded-xl sm:rounded-2xl hover:border-accent/50 transition-all duration-200 text-sm sm:text-base"
             >
               Cancel
             </Button>
@@ -351,10 +376,10 @@ const SubmissionModal = ({ isOpen, onClose, board, onSuccess }) => {
               loading={isSubmitting || connecting}
               iconName={connected ? "Send" : "Wallet"}
               iconPosition="left"
-              className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-glow px-8 py-3 text-lg font-bold rounded-2xl"
+              className="flex-1 sm:flex-none bg-accent text-accent-foreground hover:bg-accent/90 shadow-glow px-4 sm:px-8 py-2 sm:py-3 text-sm sm:text-lg font-bold rounded-xl sm:rounded-2xl"
             >
-              {isSubmitting ? 'Submitting Feedback...' : 
-               connecting ? 'Connecting Wallet...' :
+              {isSubmitting ? 'Submitting...' : 
+               connecting ? 'Connecting...' :
                connected ? 'Submit Feedback' : 'Connect Wallet'}
             </Button>
           </div>

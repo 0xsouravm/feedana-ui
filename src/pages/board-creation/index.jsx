@@ -546,7 +546,7 @@ const BoardCreationStudio = () => {
             <div className="flex items-center space-x-2 mb-4 md:mb-0">
               <Icon name="MessageSquare" size={20} className="text-accent" />
               <span className="text-sm text-muted-foreground">
-                © {new Date()?.getFullYear()} SimpleFeed. Simple feedback platform.
+                © {new Date()?.getFullYear()} Feedana. Simple feedback platform.
               </span>
             </div>
             <div className="flex items-center space-x-6">

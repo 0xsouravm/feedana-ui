@@ -7,7 +7,7 @@ import FeaturedBoards from './components/FeaturedBoards';
 import Footer from './components/Footer';
 import { useChainlinkScroll } from '../../hooks/useChainlinkScroll';
 
-const HomepageAnonymousBlockchainFeedbackPlatform = () => {
+const HomePage = () => {
   // Initialize Chainlink-style resistance scrolling
   useChainlinkScroll();
   
@@ -27,4 +27,4 @@ const HomepageAnonymousBlockchainFeedbackPlatform = () => {
   );
 };
 
-export default HomepageAnonymousBlockchainFeedbackPlatform;
+export default HomePage;

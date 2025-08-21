@@ -47,18 +47,23 @@ const Header = ({ isCollapsed = false }) => {
   const navigationItems = [
     {
       name: 'Home',
-      path: '/home',
+      path: ['/home', '/'],
       icon: 'Home'
     },
     {
       name: 'Feedback Boards',
-      path: '/board/all',
+      path: ['/board/all'],
       icon: 'Eye'
     }
   ];
 
 
-  const isActivePath = (path) => location?.pathname === path;
+  const isActivePath = (path) => {
+    if (Array.isArray(path)) {
+      return path.includes(location?.pathname);
+    }
+    return location?.pathname === path;
+  };
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -103,7 +108,7 @@ const Header = ({ isCollapsed = false }) => {
             {navigationItems?.map((item) => (
               <Link
                 key={item?.name}
-                to={item?.path}
+                to={Array.isArray(item?.path) ? item.path[0] : item?.path}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-xl transition-all duration-300 group ${
                   isActivePath(item?.path)
                     ? 'bg-accent/10 text-accent border border-accent/20' :'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -166,7 +171,7 @@ const Header = ({ isCollapsed = false }) => {
               {navigationItems?.map((item) => (
                 <Link
                   key={item?.name}
-                  to={item?.path}
+                  to={Array.isArray(item?.path) ? item.path[0] : item?.path}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-300 ${
                     isActivePath(item?.path)

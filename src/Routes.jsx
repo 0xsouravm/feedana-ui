@@ -3,9 +3,9 @@ import { BrowserRouter, Routes as RouterRoutes, Route } from "react-router-dom";
 import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from "./components/ErrorBoundary";
 import NotFound from "./pages/NotFound";
-import HomepageAnonymousBlockchainFeedbackPlatform from './pages/homepage-anonymous-blockchain-feedback-platform';
-import BoardCreationStudio from './pages/board-creation-studio';
-import FeedbackTheaterBoardViewing from './pages/feedback-theater-board-viewing';
+import HomepageAnonymousBlockchainFeedbackPlatform from './pages/home';
+import BoardCreationStudio from './pages/board-creation';
+import FeedbackTheaterBoardViewing from './pages/view-boards';
 
 const Routes = () => {
   return (
@@ -15,9 +15,9 @@ const Routes = () => {
       <RouterRoutes>
         {/* Define your route here */}
         <Route path="/" element={<HomepageAnonymousBlockchainFeedbackPlatform />} />
-        <Route path="/homepage-anonymous-blockchain-feedback-platform" element={<HomepageAnonymousBlockchainFeedbackPlatform />} />
-        <Route path="/board-creation-studio" element={<BoardCreationStudio />} />
-        <Route path="/feedback-theater-board-viewing" element={<FeedbackTheaterBoardViewing />} />
+        <Route path="/home" element={<HomepageAnonymousBlockchainFeedbackPlatform />} />
+        <Route path="/board/create" element={<BoardCreationStudio />} />
+        <Route path="/board/all" element={<FeedbackTheaterBoardViewing />} />
         <Route path="/board/:boardId" element={<FeedbackTheaterBoardViewing />} />
         <Route path="*" element={<NotFound />} />
       </RouterRoutes>

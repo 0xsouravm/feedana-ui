@@ -4,7 +4,7 @@ import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import { getAllBoards } from '../../../utils/simpleSupabaseApi';
 import ipfsFetcher from '../../../utils/ipfsFetcher';
-import ShareModal from '../../feedback-theater-board-viewing/components/ShareModal';
+import ShareModal from '../../view-boards/components/ShareModal';
 
 const FeaturedBoards = () => {
   const [timeRemaining, setTimeRemaining] = useState({});

@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import Routes from "./Routes";
-import { WalletContextProvider } from "./contexts/WalletContext";
+import { SolanaProvider } from "./providers/SolanaProvider";
 
 function App() {
   useEffect(() => {
@@ -21,9 +21,9 @@ function App() {
   }, []);
 
   return (
-    <WalletContextProvider>
+    <SolanaProvider>
       <Routes />
-    </WalletContextProvider>
+    </SolanaProvider>
   );
 }
 

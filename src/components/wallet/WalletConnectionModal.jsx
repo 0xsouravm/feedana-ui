@@ -11,6 +11,14 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
   const [error, setError] = useState(null);
   const lastSelectedWallet = useRef(null);
 
+  // Clear error when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setError(null);
+      setIsConnecting(false);
+    }
+  }, [isOpen]);
+
   // Prevent scrolling when modal is open
   useEffect(() => {
     // Don't add any scroll prevention on board creation page
@@ -221,7 +229,7 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
                 wallet.readyState === WalletReadyState.Loadable
               )
               .filter(wallet => {
-                // Only show Phantom and Solflare (remove MetaMask for now)
+                // Only show Phantom and Solflare
                 const walletName = wallet.adapter?.name || wallet.name;
                 return ['Phantom', 'Solflare'].includes(walletName);
               })
@@ -266,7 +274,7 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
             {wallets
               .filter(wallet => wallet.readyState === WalletReadyState.NotDetected)
               .filter(wallet => {
-                // Only show Phantom and Solflare (remove MetaMask for now)
+                // Only show Phantom and Solflare
                 const walletName = wallet.adapter?.name || wallet.name;
                 return ['Phantom', 'Solflare'].includes(walletName);
               })
@@ -285,9 +293,9 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
                 {wallets
                   .filter(wallet => wallet.readyState === WalletReadyState.NotDetected)
                   .filter(wallet => {
-                    // Only show the 3 wallets we want
+                    // Only show Phantom and Solflare for installation
                     const walletName = wallet.adapter?.name || wallet.name;
-                    return ['Phantom', 'Solflare', 'MetaMask'].includes(walletName);
+                    return ['Phantom', 'Solflare'].includes(walletName);
                   })
                   .reduce((unique, wallet) => {
                     // Remove duplicates by name only

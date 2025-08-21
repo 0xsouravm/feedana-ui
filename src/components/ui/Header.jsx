@@ -32,11 +32,7 @@ const Header = ({ isCollapsed = false }) => {
   };
 
   const handleWalletClick = () => {
-    if (connected && disconnect) {
-      disconnect();
-    } else {
-      setIsWalletModalOpen(true);
-    }
+    setIsWalletModalOpen(true);
   };
 
   useEffect(() => {

@@ -105,7 +105,7 @@ const HeroSection = () => {
           </div>
 
           {/* Trust Indicators */}
-          <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto scroll-slide-up">
+          <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto">
             <div className="flex flex-col items-center text-center space-y-2 group">
               <div className="w-10 h-10 bg-success/10 rounded-full flex items-center justify-center group-hover:bg-success/20 transition-colors duration-300">
                 <Icon name="Clock" size={20} className="text-success" />

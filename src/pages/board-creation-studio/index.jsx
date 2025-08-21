@@ -509,8 +509,8 @@ const BoardCreationStudio = () => {
                   </div>
                 </div>
 
-                <div className="bg-accent/10 rounded-xl p-4 border border-accent/20 mt-6">
-                  <div className="flex items-center justify-center space-x-2 mb-2">
+                {/* <div className="bg-accent/10 rounded-xl p-4 border border-accent/20 mt-6"> */}
+                  {/* <div className="flex items-center justify-center space-x-2 mb-2">
                     <Icon name="Lightbulb" size={16} className="text-accent" />
                     <span className="text-sm font-semibold text-accent">Pro Tips</span>
                   </div>
@@ -532,7 +532,7 @@ const BoardCreationStudio = () => {
                       <span>Share your link on social media for wider reach</span>
                     </div>
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>

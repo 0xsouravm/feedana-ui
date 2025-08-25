@@ -11,7 +11,7 @@ export async function generateBoardHash(userAddress, title, category) {
   const hash = await sha256(input);
   
   // Return with 0x prefix
-  return `0x${hash}`;
+  return `0x${hash.substring(0, 16)}`;
 }
 
 // Validate board data before creation

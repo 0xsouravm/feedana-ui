@@ -1,0 +1,244 @@
+{
+  "address": "8YsNicGdBn86spF22Kk4rTB59HpGrs1wWGUedjuEr2U5",
+  "metadata": {
+    "name": "feedana",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "create_feedback_board",
+      "discriminator": [
+        30,
+        161,
+        107,
+        112,
+        10,
+        235,
+        222,
+        149
+      ],
+      "accounts": [
+        {
+          "name": "feedback_board",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  101,
+                  101,
+                  100,
+                  98,
+                  97,
+                  99,
+                  107,
+                  95,
+                  98,
+                  111,
+                  97,
+                  114,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "creator"
+              },
+              {
+                "kind": "arg",
+                "path": "board_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "platform_wallet",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "board_id",
+          "type": "string"
+        },
+        {
+          "name": "ipfs_cid",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "submit_feedback",
+      "discriminator": [
+        222,
+        189,
+        16,
+        203,
+        186,
+        151,
+        236,
+        188
+      ],
+      "accounts": [
+        {
+          "name": "feedback_board",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  101,
+                  101,
+                  100,
+                  98,
+                  97,
+                  99,
+                  107,
+                  95,
+                  98,
+                  111,
+                  97,
+                  114,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "feedback_board.creator",
+                "account": "FeedbackBoard"
+              },
+              {
+                "kind": "account",
+                "path": "feedback_board.board_id",
+                "account": "FeedbackBoard"
+              }
+            ]
+          }
+        },
+        {
+          "name": "feedback_giver",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "platform_wallet",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "new_ipfs_cid",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "FeedbackBoard",
+      "discriminator": [
+        253,
+        118,
+        191,
+        206,
+        185,
+        91,
+        125,
+        31
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidIpfsCid",
+      "msg": "Invalid IPFS CID format"
+    },
+    {
+      "code": 6001,
+      "name": "BoardIdTooLong",
+      "msg": "Board ID too long"
+    },
+    {
+      "code": 6002,
+      "name": "EmptyBoardId",
+      "msg": "Board ID cannot be empty"
+    },
+    {
+      "code": 6003,
+      "name": "EmptyIpfsCid",
+      "msg": "IPFS CID cannot be empty"
+    },
+    {
+      "code": 6004,
+      "name": "DuplicateFeedbackBoard",
+      "msg": "Feedback board already exists for this creator and board ID"
+    },
+    {
+      "code": 6005,
+      "name": "InsufficientFunds",
+      "msg": "Insufficient funds to create feedback board"
+    },
+    {
+      "code": 6006,
+      "name": "InvalidIpfsCidLength",
+      "msg": "Invalid IPFS CID length - must be between 32 and 64 characters"
+    },
+    {
+      "code": 6007,
+      "name": "InvalidBoardIdChars",
+      "msg": "Board ID contains invalid characters - only alphanumeric and hyphens allowed"
+    },
+    {
+      "code": 6008,
+      "name": "FeedbackBoardNotFound",
+      "msg": "Feedback board does not exist"
+    },
+    {
+      "code": 6009,
+      "name": "UnauthorizedAccess",
+      "msg": "Unauthorized access - only the creator can modify this board"
+    }
+  ],
+  "types": [
+    {
+      "name": "FeedbackBoard",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "ipfs_cid",
+            "type": "string"
+          },
+          {
+            "name": "board_id",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,99 +1,234 @@
-# React
+# 🚀 Feedana - Anonymous Feedback Platform
 
-A modern React-based project utilizing the latest frontend technologies and tools for building responsive web applications.
+<div align="center">
 
-## 🚀 Features
+[![React](https://img.shields.io/badge/React-18.2.0-blue.svg)](https://reactjs.org/)
+[![Solana](https://img.shields.io/badge/Solana-Blockchain-green.svg)](https://solana.com/)
+[![Supabase](https://img.shields.io/badge/Supabase-Database-orange.svg)](https://supabase.com/)
+[![IPFS](https://img.shields.io/badge/IPFS-Distributed_Storage-yellow.svg)](https://ipfs.io/)
+[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-Styling-38B2AC.svg)](https://tailwindcss.com/)
 
-- **React 18** - React version with improved rendering and concurrent features
-- **Vite** - Lightning-fast build tool and development server
-- **Redux Toolkit** - State management with simplified Redux setup
-- **TailwindCSS** - Utility-first CSS framework with extensive customization
-- **React Router v6** - Declarative routing for React applications
-- **Data Visualization** - Integrated D3.js and Recharts for powerful data visualization
-- **Form Management** - React Hook Form for efficient form handling
-- **Animation** - Framer Motion for smooth UI animations
-- **Testing** - Jest and React Testing Library setup
+**Anonymous feedback collection without the politics - no registration, no retaliation**
 
-## 📋 Prerequisites
+[🌐 Live Demo](#) | [📚 Documentation](#architecture) | [🤝 Contributing](#contributing)
 
-- Node.js (v14.x or higher)
-- npm or yarn
+</div>
 
-## 🛠️ Installation
+---
 
-1. Install dependencies:
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
-   
-2. Start the development server:
-   ```bash
-   npm start
-   # or
-   yarn start
-   ```
+## 📖 Table of Contents
 
-## 📁 Project Structure
+- [🌟 Overview](#overview)
+- [✨ Key Features](#key-features)
+- [🏗️ Architecture](#architecture)
+- [🛠️ Tech Stack](#tech-stack)
+- [🚀 Quick Start](#quick-start)
+- [📋 Project Structure](#project-structure)
+- [🔧 Development Guide](#development-guide)
+- [🌐 Deployment](#deployment)
+- [🤝 Contributing](#contributing)
+- [📄 License](#license)
 
+---
+
+## 🌟 Overview
+
+**Feedana** is a decentralized feedback platform that empowers users to collect valuable feedback effortlessly. Built on the Solana blockchain with IPFS for distributed storage, it ensures complete anonymity and censorship resistance while maintaining data integrity.
+
+### 🎯 Mission
+
+Create a feedback ecosystem where honest opinions can be shared without fear of retaliation, enabling organizations and individuals to receive authentic insights for continuous improvement.
+
+---
+
+## ✨ Key Features
+
+### 🔒 **Complete Anonymity**
+- No user registration required
+- Anonymous feedback submissions
+- Privacy-first design philosophy
+- Zero personal data collection
+
+### ⚡ **Lightning Fast**
+- Built on Solana for sub-second transactions
+- Real-time feedback updates
+- Instant board creation and sharing
+- Live feedback counter system
+
+### 🌍 **Decentralized & Censorship-Resistant**
+- IPFS for distributed data storage
+- Blockchain-based board ownership
+- No single point of failure
+- Immutable feedback records
+
+### 🎨 **Beautiful & Intuitive**
+- Modern, responsive design
+- Interactive animations with GSAP
+- Glass morphism UI elements
+- Mobile-first approach
+
+---
+
+## 🏗️ Architecture
+
+### System Overview
+
+```mermaid
+flowchart TB
+    subgraph Frontend["Frontend Layer"]
+        UI[React Application]
+        Wallet[Solana Wallet Adapter]
+    end
+    
+    subgraph Blockchain["Blockchain Layer"]
+        Solana[Solana Network]
+        Anchor[Anchor Program]
+        PDA[Program Derived Accounts]
+    end
+    
+    subgraph Storage["Storage Layer"]
+        IPFS[IPFS Network]
+        Supabase[Supabase Database]
+    end
+    
+    subgraph Services["Services"]
+        API[Supabase API]
+        IPFS_Service[IPFS Service]
+        Anchor_Service[Anchor Service]
+    end
+    
+    UI --> Wallet
+    UI --> API
+    UI --> IPFS_Service
+    UI --> Anchor_Service
+    
+    Wallet --> Anchor
+    Anchor_Service --> Anchor
+    
+    API -.->|Board Metadata| Supabase
+    IPFS_Service -.->|Board Data and Feedbacks| IPFS
+    Anchor -.->|Transactions| Solana
+    Anchor -.->|Board Metadata| PDA
 ```
-react_app/
-├── public/             # Static assets
-├── src/
-│   ├── components/     # Reusable UI components
-│   ├── pages/          # Page components
-│   ├── styles/         # Global styles and Tailwind configuration
-│   ├── App.jsx         # Main application component
-│   ├── Routes.jsx      # Application routes
-│   └── index.jsx       # Application entry point
-├── .env                # Environment variables
-├── index.html          # HTML template
-├── package.json        # Project dependencies and scripts
-├── tailwind.config.js  # Tailwind CSS configuration
-└── vite.config.js      # Vite configuration
+
+### Data Flow Architecture
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant Wallet
+    participant IPFS
+    participant Solana
+    participant Supabase
+    
+    Note over User, Supabase: Board Creation Flow
+    User->>Frontend: Create Board
+    Frontend->>Wallet: Request Connection
+    Wallet->>Frontend: Wallet Connected
+    Frontend->>IPFS: Create Board File
+    IPFS->>Frontend: Board Created
+    IPFS->>Frontend: IPFS CID
+    Frontend->>Solana: Add Board Metadata Onchain
+    Solana->>Frontend: Transaction Successful
+    Frontend->>Supabase: Store Board Metadata in DB
+    Supabase->>Frontend: Board Saved
+    
+    Note over User, Supabase: Feedback Submission Flow
+    User->>Frontend: Submit Feedback
+    Frontend->>IPFS: Fetch Board Data
+    IPFS->>Frontend: Current Data
+    Frontend->>IPFS: Upload Updated Data
+    IPFS->>Frontend: New CID
+    Frontend->>Solana: Update CID Onchain
+    Solana->>Frontend: Transaction Successful
+    Frontend->>Supabase: Update Board CID
+    Supabase->>Frontend: Updated
 ```
 
-## 🧩 Adding Routes
+Feedana follows a decentralized architecture with three core layers:
 
-To add new routes to the application, update the `Routes.jsx` file:
+### Frontend Layer
+- **React Application** - Modern React 18 with hooks and component-based architecture
+- **Wallet Integration** - Solana wallet adapter for seamless Web3 connectivity
+- **State Management** - Redux Toolkit for global application state
 
-```jsx
-import { useRoutes } from "react-router-dom";
-import HomePage from "pages/HomePage";
-import AboutPage from "pages/AboutPage";
+### Blockchain Layer
+- **Solana Network** - High-performance blockchain for board ownership and transactions
+- **Anchor Program** - Smart contract framework for program logic
+- **Program Derived Addresses (PDAs)** - Deterministic accounts for board management
 
-const ProjectRoutes = () => {
-  let element = useRoutes([
-    { path: "/", element: <HomePage /> },
-    { path: "/about", element: <AboutPage /> },
-    // Add more routes as needed
-  ]);
+### Storage Layer
+- **IPFS Network** - Distributed storage for feedback data and board content
+- **Pinata Service** - Reliable IPFS pinning for data availability
+- **Supabase Database** - Real-time database for metadata and board indexing
 
-  return element;
-};
-```
+### Service Integration
+The application integrates these layers through dedicated service modules:
+- `supabaseApi.js` - Database operations and board management
+- `ipfsService.js` - IPFS operations for distributed storage
+- `anchorService.js` - Solana blockchain interactions
 
-## 🎨 Styling
+---
 
-This project uses Tailwind CSS for styling. The configuration includes:
+## 🛠️ Tech Stack
 
-- Forms plugin for form styling
-- Typography plugin for text styling
-- Aspect ratio plugin for responsive elements
-- Container queries for component-specific responsive design
-- Fluid typography for responsive text
-- Animation utilities
+### Frontend
+- **React 18.2.0** - Modern React with hooks and concurrent features
+- **Vite** - Lightning-fast build tool and dev server
+- **TailwindCSS** - Utility-first CSS framework
+- **Framer Motion** - Smooth animations and transitions
+- **GSAP** - Professional-grade animations
+- **React Router** - Client-side routing
+- **React Hook Form** - Performant forms with easy validation
 
-## 📱 Responsive Design
+### Blockchain & Web3
+- **Solana Web3.js** - Solana blockchain interaction
+- **Anchor Framework** - Solana program development
+- **Wallet Adapter** - Universal wallet connection
+- **@coral-xyz/anchor** - TypeScript client for Anchor programs
 
-The app is built with responsive design using Tailwind CSS breakpoints.
+### Storage & Backend
+- **Supabase** - PostgreSQL database with real-time subscriptions
+- **IPFS** - Distributed file storage
 
+---
 
-## 📦 Deployment
+## 🤝 Contributing
 
-Build the application for production:
+We welcome contributions from the community! Here's how you can help:
 
-```bash
-npm run build
-```
+### Getting Started
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+### Contribution Guidelines
+- Follow existing code style
+- Add tests for new features
+- Update documentation
+- Ensure responsive design
+
+### Areas for Contribution
+- 🐛 Bug fixes and improvements
+- ✨ New features and enhancements
+- 📚 Documentation improvements
+- 🎨 UI/UX enhancements
+- 🔧 Performance optimizations
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+---
+
+<div align="center">
+
+**Built with ❤️ for the future of anonymous feedback**
+
+[⭐ Star this repo](https://github.com/0xsouravm/feedana-ui) | [🐛 Report Bug](https://github.com/0xsouravm/feedana-ui/issues) | [💡 Request Feature](https://github.com/0xsouravm/feedana/issues)
+
+</div>

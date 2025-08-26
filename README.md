@@ -10,7 +10,7 @@
 
 **Anonymous feedback collection without the politics - no registration, no retaliation**
 
-[🌐 Live Demo](#) | [📚 Documentation](#architecture) | [🤝 Contributing](#contributing)
+[🌐 Live Demo](#) | [📚 Documentation](#-architecture) | [🤝 Contributing](#-contributing)
 
 </div>
 
@@ -22,10 +22,6 @@
 - [✨ Key Features](#key-features)
 - [🏗️ Architecture](#architecture)
 - [🛠️ Tech Stack](#tech-stack)
-- [🚀 Quick Start](#quick-start)
-- [📋 Project Structure](#project-structure)
-- [🔧 Development Guide](#development-guide)
-- [🌐 Deployment](#deployment)
 - [🤝 Contributing](#contributing)
 - [📄 License](#license)
 

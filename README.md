@@ -10,7 +10,7 @@
 
 **Anonymous feedback collection without the politics - no registration, no retaliation**
 
-[🌐 Live Demo](#) | [📚 Documentation](#-architecture) | [🤝 Contributing](#-contributing)
+[🌐 Live Demo](https://feedana.vercel.app) | [📚 Documentation](#🎨-architecture) | [🤝 Contributing](#🤝-contributing)
 
 </div>
 
@@ -18,12 +18,12 @@
 
 ## 📖 Table of Contents
 
-- [🌟 Overview](#overview)
-- [✨ Key Features](#key-features)
-- [🏗️ Architecture](#architecture)
-- [🛠️ Tech Stack](#tech-stack)
-- [🤝 Contributing](#contributing)
-- [📄 License](#license)
+- [🌟 Overview](#🌟-overview)
+- [✨ Key Features](#✨-key-features)
+- [🏗️ Architecture](#🎨-architecture)
+- [🛠️ Tech Stack](#🛠️-tech-stack)
+- [🤝 Contributing](#🤝-contributing)
+- [📄 License](#📄-license)
 
 ---
 

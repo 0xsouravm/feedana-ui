@@ -88,7 +88,10 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
       }
       
       if (targetWallet.readyState === WalletReadyState.NotDetected) {
-        throw new Error(`${walletName} is not installed. Please install it first.`);
+        // Don't try to connect, redirect to installation instead
+        setIsConnecting(false);
+        window.open(targetWallet.adapter.url, '_blank');
+        return;
       }
       
       // Select wallet first
@@ -248,7 +251,7 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
                     key={wallet.adapter.name}
                     onClick={() => handleWalletSelect(wallet.adapter.name)}
                     disabled={isConnecting || connecting}
-                    className="w-full flex items-center space-x-4 p-4 rounded-xl border border-border/30 hover:border-accent/30 hover:bg-accent/5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full flex items-center space-x-4 p-4 rounded-xl border border-success/30 bg-success/5 hover:border-success/50 hover:bg-success/10 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <img 
                       src={getWalletIcon(wallet.adapter.name)} 
@@ -263,14 +266,16 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
                         {status.text}
                       </div>
                     </div>
-                    {(isConnecting || connecting) && (
+                    {(isConnecting || connecting) ? (
                       <Icon name="Loader2" size={16} className="text-accent animate-spin" />
+                    ) : (
+                      <Icon name="ArrowRight" size={16} className="text-success" />
                     )}
                   </button>
                 );
               })}
-
-            {/* Not Detected Wallets */}
+            
+            {/* Not Detected Wallets - Show inline with detected ones for easier access */}
             {wallets
               .filter(wallet => wallet.readyState === WalletReadyState.NotDetected)
               .filter(wallet => {
@@ -285,50 +290,30 @@ const WalletConnectionModal = ({ isOpen, onClose }) => {
                   unique.push(wallet);
                 }
                 return unique;
-              }, []).length > 0 && (
-              <div className="mt-6">
-                <p className="text-muted-foreground text-sm mb-3">
-                  Install a wallet to get started:
-                </p>
-                {wallets
-                  .filter(wallet => wallet.readyState === WalletReadyState.NotDetected)
-                  .filter(wallet => {
-                    // Only show Phantom and Solflare for installation
-                    const walletName = wallet.adapter?.name || wallet.name;
-                    return ['Phantom', 'Solflare'].includes(walletName);
-                  })
-                  .reduce((unique, wallet) => {
-                    // Remove duplicates by name only
-                    const walletName = wallet.adapter?.name || wallet.name;
-                    if (!unique.find(w => (w.adapter?.name || w.name) === walletName)) {
-                      unique.push(wallet);
-                    }
-                    return unique;
-                  }, [])
-                  .map((wallet) => (
-                    <button
-                      key={wallet.adapter.name}
-                      onClick={() => window.open(wallet.adapter.url, '_blank')}
-                      className="w-full flex items-center space-x-4 p-4 rounded-xl border border-border/30 hover:border-accent/30 hover:bg-accent/5 transition-all duration-200"
-                    >
-                      <img 
-                        src={getWalletIcon(wallet.adapter.name)} 
-                        alt={wallet.adapter.name}
-                        className="w-6 h-6 opacity-50" 
-                      />
-                      <div className="text-left flex-1">
-                        <div className="font-medium text-foreground">
-                          Install {wallet.adapter.name}
-                        </div>
-                        <div className="text-sm text-destructive">
-                          Not detected
-                        </div>
-                      </div>
-                      <Icon name="ExternalLink" size={16} className="text-muted-foreground" />
-                    </button>
-                  ))}
-              </div>
-            )}
+              }, [])
+              .map((wallet) => (
+                <button
+                  key={wallet.adapter.name}
+                  onClick={() => handleWalletSelect(wallet.adapter.name)}
+                  className="w-full flex items-center space-x-4 p-4 rounded-xl border border-warning/30 bg-warning/5 hover:border-warning/50 hover:bg-warning/10 transition-all duration-200"
+                >
+                  <img 
+                    src={getWalletIcon(wallet.adapter.name)} 
+                    alt={wallet.adapter.name}
+                    className="w-6 h-6 opacity-70" 
+                  />
+                  <div className="text-left flex-1">
+                    <div className="font-medium text-foreground">
+                      {wallet.adapter.name}
+                    </div>
+                    <div className="text-sm text-warning">
+                      Click to install
+                    </div>
+                  </div>
+                  <Icon name="Download" size={16} className="text-warning" />
+                </button>
+              ))}
+
             
             {/* If no wallets are available at all */}
             {wallets.length === 0 && (

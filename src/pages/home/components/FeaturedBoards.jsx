@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
-import { getAllBoards } from '../../../utils/simpleSupabaseApi';
+import { getAllBoards } from '../../../utils/supabaseApi';
 import ipfsFetcher from '../../../utils/ipfsFetcher';
 import ShareModal from '../../board-view/components/ShareModal';
 
@@ -321,7 +321,7 @@ const FeaturedBoards = () => {
                     <Button
                       variant="outline"
                       iconName="Share"
-                      className="border-accent/30 text-accent hover:bg-accent/10"
+                      className="border-accent/30 text-accent hover:bg-accent/10 hover:text-white"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -343,7 +343,7 @@ const FeaturedBoards = () => {
                   size="lg"
                   iconName="ArrowRight"
                   iconPosition="right"
-                  className="border-accent/30 text-accent hover:bg-accent/10 px-8 py-4 text-lg"
+                  className="border-accent/30 text-accent hover:bg-accent/10 hover:text-white px-8 py-4 text-lg"
                 >
                   View All Boards ({featuredBoards?.length > 0 ? featuredBoards.length + '+' : 'All'})
                 </Button>
@@ -433,7 +433,7 @@ const FeaturedBoards = () => {
                     size="lg"
                     iconName="Search"
                     iconPosition="left"
-                    className="border-accent/30 text-accent hover:bg-accent/10"
+                    className="border-accent/30 text-accent hover:bg-accent/10 hover:text-white"
                   >
                     Explore All Boards
                   </Button>

@@ -1,17 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useWallet, useAnchorWallet } from '@solana/wallet-adapter-react';
+import { PublicKey } from '@solana/web3.js';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import WalletConnectionModal from '../../../components/wallet/WalletConnectionModal';
-import { generateFeedbackHash } from '../../../utils/simpleBoardUtils';
-import { getBoardById, updateBoardIPFS } from '../../../utils/simpleSupabaseApi';
+import ErrorNotification from '../../../components/ui/ErrorNotification';
+import { generateFeedbackHash } from '../../../utils/boardUtils';
+import { getBoardById, updateBoardIPFS } from '../../../utils/supabaseApi';
 import { ipfsService } from '../../../services/ipfsService';
 import ipfsFetcher from '../../../utils/ipfsFetcher';
+import { submitFeedback } from '../../../services/anchorService';
+import { checkSolBalance, formatSolBalance } from '../../../utils/balanceUtils';
 
-const SubmissionModal = ({ isOpen, onClose, board, onSuccess }) => {
+const SubmissionModal = ({ isOpen, onClose, board, onSuccess, boardCreator }) => {
   // Wallet connection
   const { connected, connecting, publicKey } = useWallet();
+  const wallet = useAnchorWallet();
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
+  
+  // Error notification state
+  const [errorNotification, setErrorNotification] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    actionText: '',
+    onAction: null
+  });
+
+  // Balance checking state
+  const [balanceInfo, setBalanceInfo] = useState({
+    balance: 0,
+    hasEnoughBalance: true,
+    isChecking: false,
+    error: null
+  });
   
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -72,9 +94,51 @@ const SubmissionModal = ({ isOpen, onClose, board, onSuccess }) => {
     }
   }, [content]);
 
+  // Check balance when wallet connects and modal opens
+  useEffect(() => {
+    const checkBalance = async () => {
+      if (isOpen && connected && publicKey) {
+        setBalanceInfo(prev => ({ ...prev, isChecking: true }));
+        const result = await checkSolBalance(publicKey);
+        setBalanceInfo({
+          balance: result.balance,
+          hasEnoughBalance: result.hasEnoughBalance,
+          isChecking: false,
+          error: result.error
+        });
+      } else if (!connected) {
+        setBalanceInfo({
+          balance: 0,
+          hasEnoughBalance: true,
+          isChecking: false,
+          error: null
+        });
+      }
+    };
+
+    checkBalance();
+  }, [isOpen, connected, publicKey]);
+
   const handleSubmit = async () => {
+    console.log('handleSubmit called - Wallet states:');
+    console.log('- connected:', connected);
+    console.log('- wallet:', wallet);
+    console.log('- publicKey:', publicKey?.toString());
+    
     if (!connected) {
       setIsWalletModalOpen(true);
+      return;
+    }
+    
+    // Safety check: prevent board creators from submitting feedback
+    if (connected && publicKey && boardCreator && publicKey.toString() === boardCreator) {
+      setErrorNotification({
+        isOpen: true,
+        title: 'Cannot Submit Feedback',
+        message: 'You cannot give feedback on your own board. Share your board with others to collect their feedback.',
+        actionText: null,
+        onAction: null
+      });
       return;
     }
     
@@ -146,17 +210,100 @@ const SubmissionModal = ({ isOpen, onClose, board, onSuccess }) => {
       
       console.log('Updated board data:', updatedBoardData);
       
-      // Step 5: Upload updated board data to IPFS
+      // Step 5: Upload new version to IPFS (keep original untouched for now)
+      const oldCid = boardDbData.ipfs_cid;
+      
+      // Upload the new version (original stays untouched)
+      console.log('📤 Uploading new version to IPFS...');
       const ipfsUploadResult = await ipfsService.uploadBoardToIPFS(updatedBoardData);
       
       if (!ipfsUploadResult.success) {
         throw new Error(`Failed to upload to IPFS: ${ipfsUploadResult.error}`);
       }
       
-      console.log('New IPFS upload result:', ipfsUploadResult);
+      console.log('✅ New IPFS version uploaded:', ipfsUploadResult);
+      console.log('📝 Original file still exists at CID:', oldCid);
       
-      // Step 6: Update database with new IPFS CID
-      await updateBoardIPFS(board.id, ipfsUploadResult.cid);
+      // Step 6: Submit feedback on-chain using Anchor (CRITICAL STEP)
+      let anchorTx = null;
+      let blockchainSuccess = false;
+      
+      console.log('🚀 Submitting feedback on-chain...');
+      console.log('Wallet:', wallet?.publicKey?.toString());
+      console.log('Board creator:', boardDbData.created_by || boardDbData.owner);
+      console.log('Board ID:', board.id);
+      console.log('IPFS CID:', ipfsUploadResult.cid);
+      
+      try {
+        if (!wallet) {
+          throw new Error('Wallet not available for blockchain submission');
+        }
+        
+        // Use board creator or owner as fallback
+        const creatorPubkey = new PublicKey(boardDbData.created_by || boardDbData.owner);
+        
+        console.log('🔗 Calling submitFeedback anchor service...');
+        anchorTx = await submitFeedback(
+          wallet,
+          creatorPubkey,
+          board.id,
+          ipfsUploadResult.cid
+        );
+        
+        blockchainSuccess = true;
+        console.log('✅ Feedback submitted on-chain successfully:', anchorTx);
+        
+      } catch (anchorError) {
+        console.error('💥 Blockchain submission failed:', anchorError);
+        console.error('Anchor error details:', {
+          message: anchorError.message,
+          logs: anchorError.logs,
+          programErrorStack: anchorError.programErrorStack
+        });
+        
+        // CRITICAL: Delete the new version since blockchain failed
+        if (ipfsUploadResult.cid) {
+          console.log('🗑️ Deleting new version due to blockchain failure...');
+          try {
+            await ipfsService.deleteByCID(ipfsUploadResult.cid);
+            console.log('✅ Failed new version deleted from IPFS');
+            console.log('📝 Original version remains untouched at CID:', oldCid);
+          } catch (cleanupError) {
+            console.error('❌ Failed to cleanup new version:', cleanupError);
+          }
+        }
+        
+        // Re-throw the error to prevent database update
+        throw new Error(`Blockchain submission failed: ${anchorError.message}`);
+      }
+      
+      // Step 7: ONLY if blockchain succeeded - cleanup old and update database
+      if (blockchainSuccess) {
+        console.log('✅ Blockchain successful, cleaning up old version and updating database...');
+        
+        // Delete the old version now that blockchain succeeded
+        if (oldCid) {
+          console.log('🗑️ Attempting to delete old IPFS file with CID:', oldCid);
+          try {
+            const deleteResult = await ipfsService.deleteByCID(oldCid);
+            if (deleteResult.success) {
+              console.log('✅ Old version deleted from IPFS successfully');
+            } else {
+              console.warn('⚠️ IPFS delete operation returned failure:', deleteResult.error);
+            }
+          } catch (cleanupError) {
+            console.error('❌ Failed to delete old version from IPFS:', cleanupError);
+          }
+        } else {
+          console.log('⚠️ No old CID to delete');
+        }
+        
+        // Update database with new CID
+        await updateBoardIPFS(board.id, ipfsUploadResult.cid);
+        console.log('✅ Database updated with new CID:', ipfsUploadResult.cid);
+      } else {
+        throw new Error('Blockchain submission failed, database and IPFS remain unchanged');
+      }
       
       console.log('Feedback submitted successfully!');
       
@@ -172,8 +319,99 @@ const SubmissionModal = ({ isOpen, onClose, board, onSuccess }) => {
       }
       
     } catch (error) {
-      console.error('Error submitting feedback:', error);
-      alert(`Failed to submit feedback: ${error.message}`);
+      console.error('💥 Feedback submission failed:', error);
+      
+      // Show user-friendly error message based on specific error types
+      const getErrorDetails = (error) => {
+        const errorMsg = error.message?.toLowerCase() || '';
+        const errorString = JSON.stringify(error).toLowerCase();
+        
+        // Check for insufficient balance errors
+        if (errorMsg.includes('insufficient') || 
+            errorMsg.includes('not enough') ||
+            errorMsg.includes('balance') ||
+            errorString.includes('insufficient') ||
+            errorString.includes('0x1') || // Solana insufficient funds error code
+            errorMsg.includes('account does not have enough sol')) {
+          return {
+            title: 'Insufficient Balance',
+            message: 'You don\'t have enough SOL to complete this transaction. Please add more SOL to your wallet and try again.',
+            actionText: 'Add SOL'
+          };
+        }
+        
+        // Check for wallet connection errors
+        if (errorMsg.includes('wallet not connected') ||
+            errorMsg.includes('user rejected') ||
+            errorMsg.includes('user denied') ||
+            errorMsg.includes('user cancelled')) {
+          return {
+            title: 'Wallet Connection Issue',
+            message: 'Please connect your wallet and approve the transaction to continue.',
+            actionText: 'Connect Wallet'
+          };
+        }
+        
+        // Check for network/RPC errors
+        if (errorMsg.includes('network') ||
+            errorMsg.includes('rpc') ||
+            errorMsg.includes('connection') ||
+            errorMsg.includes('timeout')) {
+          return {
+            title: 'Network Connection Error',
+            message: 'Unable to connect to the Solana network. Please check your internet connection and try again.',
+            actionText: 'Retry'
+          };
+        }
+        
+        // Check for transaction failures
+        if (errorMsg.includes('transaction failed') ||
+            errorMsg.includes('simulation failed') ||
+            errorMsg.includes('blockhash not found')) {
+          return {
+            title: 'Transaction Failed',
+            message: 'The blockchain transaction failed. This might be due to network congestion. Please try again.',
+            actionText: 'Retry Transaction'
+          };
+        }
+        
+        // Check for IPFS errors
+        if (error.message.includes('Failed to upload to IPFS') ||
+            errorMsg.includes('ipfs') ||
+            errorMsg.includes('pinata')) {
+          return {
+            title: 'IPFS Upload Failed',
+            message: 'Failed to upload data to IPFS. Please check your internet connection and try again.',
+            actionText: 'Retry Upload'
+          };
+        }
+        
+        // Default blockchain error
+        if (error.message.includes('Blockchain submission failed')) {
+          return {
+            title: 'Blockchain Error',
+            message: 'The blockchain transaction encountered an error. Please try again or contact support if the issue persists.',
+            actionText: 'Try Again'
+          };
+        }
+        
+        // Generic error
+        return {
+          title: 'Feedback Submission Failed',
+          message: error.message || 'An unexpected error occurred. Please try again.',
+          actionText: 'Try Again'
+        };
+      };
+      
+      const errorDetails = getErrorDetails(error);
+      
+      setErrorNotification({
+        isOpen: true,
+        title: errorDetails.title,
+        message: errorDetails.message,
+        actionText: errorDetails.actionText,
+        onAction: null
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -190,23 +428,6 @@ const SubmissionModal = ({ isOpen, onClose, board, onSuccess }) => {
     setTags(tags?.filter(tag => tag !== tagToRemove));
   };
 
-  const getSentimentColor = (sentiment) => {
-    switch (sentiment) {
-      case 'positive': return 'text-success';
-      case 'negative': return 'text-error';
-      case 'neutral': return 'text-muted-foreground';
-      default: return 'text-muted-foreground';
-    }
-  };
-
-  const getSentimentIcon = (sentiment) => {
-    switch (sentiment) {
-      case 'positive': return 'TrendingUp';
-      case 'negative': return 'TrendingDown';
-      case 'neutral': return 'Minus';
-      default: return 'Minus';
-    }
-  };
 
   if (!isOpen) return null;
 
@@ -372,14 +593,20 @@ const SubmissionModal = ({ isOpen, onClose, board, onSuccess }) => {
             <Button
               variant="default"
               onClick={handleSubmit}
-              disabled={(connected && content?.length < minChars) || isSubmitting || connecting}
-              loading={isSubmitting || connecting}
-              iconName={connected ? "Send" : "Wallet"}
+              disabled={(connected && content?.length < minChars) || isSubmitting || connecting || balanceInfo.isChecking || (connected && !balanceInfo.hasEnoughBalance)}
+              loading={isSubmitting || connecting || balanceInfo.isChecking}
+              iconName={connected ? (balanceInfo.hasEnoughBalance ? "Send" : "AlertTriangle") : "Wallet"}
               iconPosition="left"
-              className="flex-1 sm:flex-none bg-accent text-accent-foreground hover:bg-accent/90 shadow-glow px-4 sm:px-8 py-2 sm:py-3 text-sm sm:text-lg font-bold rounded-xl sm:rounded-2xl"
+              className={`flex-1 sm:flex-none shadow-glow px-4 sm:px-8 py-2 sm:py-3 text-sm sm:text-lg font-bold rounded-xl sm:rounded-2xl ${
+                connected && !balanceInfo.hasEnoughBalance 
+                  ? 'bg-error text-white hover:bg-error/90' 
+                  : 'bg-accent text-accent-foreground hover:bg-accent/90'
+              }`}
             >
               {isSubmitting ? 'Submitting...' : 
                connecting ? 'Connecting...' :
+               balanceInfo.isChecking ? 'Checking Balance...' :
+               connected && !balanceInfo.hasEnoughBalance ? `Insufficient Balance (${formatSolBalance(balanceInfo.balance)})` :
                connected ? 'Submit Feedback' : 'Connect Wallet'}
             </Button>
           </div>
@@ -390,6 +617,16 @@ const SubmissionModal = ({ isOpen, onClose, board, onSuccess }) => {
       <WalletConnectionModal 
         isOpen={isWalletModalOpen} 
         onClose={() => setIsWalletModalOpen(false)} 
+      />
+
+      {/* Error Notification */}
+      <ErrorNotification
+        isOpen={errorNotification.isOpen}
+        onClose={() => setErrorNotification({ ...errorNotification, isOpen: false })}
+        title={errorNotification.title}
+        message={errorNotification.message}
+        actionText={errorNotification.actionText}
+        onAction={errorNotification.onAction}
       />
 
     </div>

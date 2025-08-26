@@ -2,14 +2,14 @@ import React, { useEffect, useState } from 'react';
 import Icon from '../AppIcon';
 import Button from './Button';
 
-const SuccessNotification = ({ 
+const ErrorNotification = ({ 
   isOpen, 
   onClose, 
   title, 
   message, 
   actionText,
   onAction,
-  duration = 5000 
+  duration = 8000 // Longer duration for errors
 }) => {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -39,20 +39,20 @@ const SuccessNotification = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
-        className={`absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity duration-300 ${
+        className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
           isVisible ? 'opacity-100' : 'opacity-0'
         }`}
         onClick={handleClose}
       />
       
       {/* Notification */}
-      <div className={`relative glass-card rounded-3xl shadow-2xl max-w-md w-full p-8 transform transition-all duration-300 ${
+      <div className={`relative glass-card border-2 border-error/20 bg-error/5 rounded-3xl shadow-2xl max-w-md w-full p-8 transform transition-all duration-300 ${
         isVisible ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-4'
       }`}>
-        {/* Success Icon */}
+        {/* Error Icon */}
         <div className="flex items-center justify-center mb-6">
-          <div className="w-16 h-16 bg-success/20 rounded-full flex items-center justify-center">
-            <Icon name="CheckCircle" size={32} className="text-success animate-bounce" />
+          <div className="w-16 h-16 bg-error/20 rounded-full flex items-center justify-center">
+            <Icon name="AlertTriangle" size={32} className="text-error animate-pulse" />
           </div>
         </div>
 
@@ -75,7 +75,7 @@ const SuccessNotification = ({
                 onAction();
                 handleClose();
               }}
-              className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-glow"
+              className="bg-error text-white hover:bg-error/90 shadow-glow"
               fullWidth
             >
               {actionText}
@@ -85,7 +85,7 @@ const SuccessNotification = ({
           <Button
             variant="outline"
             onClick={handleClose}
-            className="border-border hover:bg-muted/30 hover:text-white"
+            className="border-error/30 text-error hover:bg-error/10 hover:text-white"
             fullWidth
           >
             Close
@@ -103,7 +103,7 @@ const SuccessNotification = ({
         {/* Progress Bar */}
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted/20 rounded-b-3xl overflow-hidden">
           <div 
-            className="h-full bg-success animate-shrink-width"
+            className="h-full bg-error animate-shrink-width"
             style={{
               animation: `shrink-width ${duration}ms linear forwards`
             }}
@@ -129,4 +129,4 @@ const SuccessNotification = ({
   );
 };
 
-export default SuccessNotification;
+export default ErrorNotification;

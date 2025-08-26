@@ -54,6 +54,11 @@ const Header = ({ isCollapsed = false }) => {
       name: 'Feedback Boards',
       path: ['/board/all'],
       icon: 'Eye'
+    },
+    {
+      name: 'Guide',
+      path: ['/how-it-works'],
+      icon: 'BookOpen'
     }
   ];
 

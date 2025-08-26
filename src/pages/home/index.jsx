@@ -17,7 +17,7 @@ const HomePage = () => {
       
       <main>
         <HeroSection />
-        <ValueProposition />
+        {/* <ValueProposition /> */}
         <FeaturedBoards />
         {/* <SocialProof /> */}
       </main>

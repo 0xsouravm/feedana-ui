@@ -10,38 +10,23 @@ const Footer = () => {
       title: "Platform",
       links: [
         { name: "Create Board", path: "/board/create" },
-        { name: "Feedback Theater", path: "/board/all" },
-        { name: "Privacy Academy", path: "#" },
-        { name: "Community Hub", path: "#" }
-      ]
-    },
-    {
-      title: "Privacy & Security",
-      links: [
-        { name: "Privacy Guide", path: "#" },
-        { name: "Security Audit", path: "#" },
-        { name: "Cryptographic Proofs", path: "#" },
-        { name: "Anonymity Guarantees", path: "#" }
-      ]
-    },
-    {
-      title: "Developers",
-      links: [
-        { name: "API Documentation", path: "#" },
-        { name: "Anchor Integration", path: "#" },
-        { name: "GitHub Repository", path: "#" },
-        { name: "Technical Whitepaper", path: "#" }
+        { name: "View All Boards", path: "/board/all" },
       ]
     },
     {
       title: "Support",
       links: [
-        { name: "Help Center", path: "#" },
+        { name: "How This Works", path: "/how-it-works" },
         { name: "Contact Support", path: "#" },
-        { name: "Bug Reports", path: "#" },
-        { name: "Feature Requests", path: "#" }
       ]
-    }
+    },
+    {
+      title: "Developers",
+      links: [
+        { name: "Frontend Code", path: "https://github.com/0xsouravm/feedana" },
+        { name: "Smart Contract", path: "https://github.com/0xsouravm/feedana-program" },
+      ]
+    },
   ];
 
   const socialLinks = [
@@ -52,75 +37,82 @@ const Footer = () => {
   ];
 
   const trustBadges = [
-    { name: "SOC 2 Compliant", icon: "Shield" },
-    { name: "GDPR Ready", icon: "Lock" },
+    { name: "Decentralised", icon: "Shield" },
+    { name: "Anonymous", icon: "Lock" },
     { name: "Open Source", icon: "Code" },
-    { name: "Audited", icon: "CheckCircle" }
+    { name: "Transparent", icon: "CheckCircle" }
   ];
 
   return (
-    <footer className="bg-background border-t border-border/50">
+    <footer className="bg-gradient-to-t from-muted/20 to-background border-t border-border/30">
       {/* Main Footer Content */}
-      <div className="container-padding max-w-7xl mx-auto py-16">
-        <div className="grid lg:grid-cols-6 gap-8">
+      <div className="container-padding max-w-7xl mx-auto py-20">
+        <div className="grid lg:grid-cols-5 gap-12">
           {/* Brand Section */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-8">
             <Link to="/home" className="flex items-center space-x-3 group">
-              <img 
-                src="/assets/images/logo.svg" 
-                alt="Feedana Logo" 
-                className="w-10 h-10"
-              />
+              <div className="relative">
+                <img 
+                  src="/assets/images/logo.svg" 
+                  alt="Feedana Logo" 
+                  className="w-12 h-12 group-hover:scale-110 transition-transform duration-300"
+                />
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full animate-pulse"></div>
+              </div>
               <div className="flex flex-col">
-                <span className="text-xl font-bold text-foreground">Feedana</span>
-                <span className="text-xs text-muted-foreground font-mono">v2.1.0</span>
+                <span className="text-2xl font-bold text-foreground">Feedana</span>
+                <span className="text-xs text-accent font-mono">v0.1.0 Beta</span>
               </div>
             </Link>
             
-            <p className="text-muted-foreground leading-relaxed max-w-md">
+            <p className="text-muted-foreground leading-relaxed max-w-md text-base">
               Truth without fear, feedback without friction. The first blockchain-powered 
-              anonymous feedback platform that guarantees cryptographic privacy while 
-              maintaining authenticity.
+              anonymous feedback platform built on Solana.
             </p>
 
             {/* Trust Badges */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               {trustBadges?.map((badge, index) => (
-                <div key={index} className="flex items-center space-x-2 p-2 bg-muted/10 rounded-lg">
-                  <Icon name={badge?.icon} size={14} className="text-accent" />
-                  <span className="text-xs text-muted-foreground">{badge?.name}</span>
+                <div key={index} className="flex items-center space-x-3 p-3 glass-card rounded-xl border border-accent/10">
+                  <div className="w-8 h-8 bg-accent/20 rounded-lg flex items-center justify-center">
+                    <Icon name={badge?.icon} size={16} className="text-accent" />
+                  </div>
+                  <span className="text-sm font-medium text-foreground">{badge?.name}</span>
                 </div>
-              ))}
-            </div>
-
-            {/* Social Links */}
-            <div className="flex space-x-4">
-              {socialLinks?.map((social, index) => (
-                <a
-                  key={index}
-                  href={social?.url}
-                  className="w-10 h-10 bg-muted/20 rounded-xl flex items-center justify-center text-muted-foreground hover:text-accent hover:bg-accent/10 transition-all duration-300"
-                  aria-label={social?.name}
-                >
-                  <Icon name={social?.icon} size={18} />
-                </a>
               ))}
             </div>
           </div>
 
           {/* Footer Links */}
           {footerSections?.map((section, index) => (
-            <div key={index} className="space-y-4">
-              <h3 className="font-semibold text-foreground">{section?.title}</h3>
-              <ul className="space-y-3">
+            <div key={index} className="space-y-6">
+              <h3 className="text-lg font-bold text-foreground flex items-center space-x-2">
+                <div className="w-1 h-6 bg-accent rounded-full"></div>
+                <span>{section?.title}</span>
+              </h3>
+              <ul className="space-y-4">
                 {section?.links?.map((link, linkIndex) => (
                   <li key={linkIndex}>
-                    <Link
-                      to={link?.path}
-                      className="text-muted-foreground hover:text-accent transition-colors duration-200 text-sm"
-                    >
-                      {link?.name}
-                    </Link>
+                    {link?.path?.startsWith('http') ? (
+                      <a
+                        href={link?.path}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-muted-foreground hover:text-accent transition-all duration-200 text-sm flex items-center space-x-2 group"
+                      >
+                        <Icon name="Github" size={14} className="text-accent/70 group-hover:text-accent" />
+                        <span className="group-hover:translate-x-1 transition-transform duration-200">{link?.name}</span>
+                        <Icon name="ExternalLink" size={12} className="opacity-50 group-hover:opacity-100" />
+                      </a>
+                    ) : (
+                      <Link
+                        to={link?.path}
+                        className="text-muted-foreground hover:text-accent transition-all duration-200 text-sm flex items-center space-x-2 group"
+                      >
+                        <Icon name="ArrowRight" size={12} className="text-accent/70 group-hover:text-accent" />
+                        <span className="group-hover:translate-x-1 transition-transform duration-200">{link?.name}</span>
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -153,9 +145,9 @@ const Footer = () => {
           <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
             <div className="flex items-center space-x-6 text-sm text-muted-foreground">
               <span>© {currentYear} Feedana. All rights reserved.</span>
-              <Link to="#" className="hover:text-accent transition-colors">Privacy Policy</Link>
+              {/* <Link to="#" className="hover:text-accent transition-colors">Privacy Policy</Link>
               <Link to="#" className="hover:text-accent transition-colors">Terms of Service</Link>
-              <Link to="#" className="hover:text-accent transition-colors">Cookie Policy</Link>
+              <Link to="#" className="hover:text-accent transition-colors">Cookie Policy</Link> */}
             </div>
 
             <div className="flex items-center space-x-4">

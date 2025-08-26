@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Header from '../../components/ui/Header';
+import Footer from '../home/components/Footer';
 import BoardHeader from './components/BoardHeader';
 import FilterControls from './components/FilterControls';
 import FeedbackCard from './components/FeedbackCard';
@@ -9,7 +10,7 @@ import ShareModal from './components/ShareModal';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import SuccessNotification from '../../components/ui/SuccessNotification';
-import { getBoardById } from '../../utils/simpleSupabaseApi';
+import { getBoardById } from '../../utils/supabaseApi';
 import ipfsFetcher from '../../utils/ipfsFetcher';
 
 const BoardView = () => {
@@ -28,6 +29,8 @@ const BoardView = () => {
   const [showFeedbackSuccess, setShowFeedbackSuccess] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isBoardLoading, setIsBoardLoading] = useState(true);
+  const [boardNotFound, setBoardNotFound] = useState(false);
 
   const itemsPerPage = 12;
 
@@ -49,12 +52,6 @@ This board is specifically focused on gathering constructive feedback about usab
     ]
   };
 
-  // Set up initial board selection
-  useEffect(() => {
-    if (boardId) {
-      setSelectedBoard({ id: boardId });
-    }
-  }, [boardId]);
 
   // Calculate real stats from IPFS data
   const calculateStatsFromIPFS = () => {
@@ -135,7 +132,6 @@ This board is specifically focused on gathering constructive feedback about usab
     return 'Just now';
   };
 
-  const statsData = calculateStatsFromIPFS();
 
   // Filter and sort feedback - use real feedback when available
   const feedbackToUse = realFeedback.length > 0 ? realFeedback : [];
@@ -235,37 +231,44 @@ This board is specifically focused on gathering constructive feedback about usab
     }
   };
 
-  // Fetch real feedback from IPFS when board is selected
+  // Fetch board data and validate existence
   useEffect(() => {
-    const fetchBoardFeedback = async () => {
-      if (!selectedBoard) return;
+    const fetchBoardData = async () => {
+      if (!boardId) return;
       
       try {
+        setIsBoardLoading(true);
+        setBoardNotFound(false);
         setIsLoadingFeedback(true);
         setFeedbackError(null);
         
-        console.log('Fetching board feedback from database and IPFS...');
+        console.log('Fetching board data from database...', boardId);
         
         // Get board data from database first
         let boardDbData = null;
         try {
-          boardDbData = await getBoardById(selectedBoard.id);
+          boardDbData = await getBoardById(boardId);
         } catch (dbError) {
           console.warn('Failed to fetch board from database:', dbError.message);
-          // Continue with empty state instead of showing error
-          setRealFeedback([]);
-          setBoardIPFSData(null);
+          setBoardNotFound(true);
+          setIsBoardLoading(false);
+          setIsLoadingFeedback(false);
           return;
         }
         
         if (!boardDbData) {
           console.log('Board not found in database');
-          setRealFeedback([]);
-          setBoardIPFSData(null);
+          setBoardNotFound(true);
+          setIsBoardLoading(false);
+          setIsLoadingFeedback(false);
           return;
         }
-        
-        console.log('Board data from DB:', boardDbData);
+
+        // Set the board data and mark as found
+        setSelectedBoard(boardDbData);
+        setBoardNotFound(false);
+        setIsBoardLoading(false);
+        console.log('Board found:', boardDbData);
         
         // Fetch board data from IPFS if CID exists
         if (boardDbData.ipfs_cid && boardDbData.ipfs_cid !== 'local-only') {
@@ -324,8 +327,100 @@ This board is specifically focused on gathering constructive feedback about usab
       }
     };
     
-    fetchBoardFeedback();
-  }, [selectedBoard]);
+    fetchBoardData();
+  }, [boardId]);
+
+  // Don't render main content if board is loading or not found
+  if (isBoardLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="pt-16">
+          <div className="container mx-auto px-4 py-8 max-w-6xl">
+            <div className="glass-card p-12 text-center">
+              <Icon name="Loader2" size={64} className="text-accent animate-spin mx-auto mb-6" />
+              <h2 className="text-2xl font-bold text-foreground mb-4">
+                Loading Board
+              </h2>
+              <p className="text-muted-foreground text-lg">
+                Fetching board data from the blockchain...
+              </p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (boardNotFound) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Header />
+        <main className="flex-1 flex items-center justify-center px-4">
+          <div className="max-w-lg w-full">
+            <div className="glass-card p-12 text-center border-2 border-error/20 bg-error/5 rounded-3xl shadow-2xl">
+              {/* Error Icon with animation */}
+              <div className="relative mb-8">
+                <div className="w-24 h-24 bg-error/10 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                  <Icon name="SearchX" size={48} className="text-error" />
+                </div>
+              </div>
+
+              <h2 className="text-3xl font-bold text-foreground mb-4">
+                Board Not Found
+              </h2>
+              
+              <div className="space-y-3 mb-8">
+                <p className="text-muted-foreground text-lg">
+                  The board with ID
+                </p>
+                <div className="bg-muted/30 border border-border/50 rounded-xl p-4 mx-auto max-w-full overflow-hidden">
+                  <code className="font-mono text-foreground text-lg font-semibold tracking-wider break-all word-wrap">
+                    {boardId}
+                  </code>
+                </div>
+                <p className="text-muted-foreground">
+                  doesn't exist.
+                </p>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link to="/board/all">
+                  <Button
+                    variant="default"
+                    size="lg"
+                    iconName="List"
+                    iconPosition="left"
+                    className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-glow w-full sm:w-auto"
+                  >
+                    View All Boards
+                  </Button>
+                </Link>
+                <Link to="/board/create">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    iconName="Plus"
+                    iconPosition="left"
+                    className="border-accent/30 text-accent hover:bg-accent/10 hover:text-white w-full sm:w-auto"
+                  >
+                    Create Your Board
+                  </Button>
+                </Link>
+              </div>
+              
+              {/* Decorative elements */}
+              <div className="mt-8 pt-8 border-t border-border/30">
+                <p className="text-xs text-muted-foreground/70">
+                  Double-check the URL or browse our available boards
+                </p>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -408,7 +503,7 @@ This board is specifically focused on gathering constructive feedback about usab
                       onClick={() => window.location.reload()}
                       iconName="RefreshCw"
                       iconPosition="left"
-                      className="border-error/30 text-error hover:bg-error/10"
+                      className="border-error/30 text-error hover:bg-error/10 hover:text-white"
                     >
                       Try Again
                     </Button>
@@ -546,6 +641,7 @@ This board is specifically focused on gathering constructive feedback about usab
         isOpen={isSubmissionModalOpen}
         onClose={() => setIsSubmissionModalOpen(false)}
         board={selectedBoard || boardData}
+        boardCreator={boardIPFSData?.created_by}
         onSuccess={() => setShowFeedbackSuccess(true)}
       />
 
@@ -565,11 +661,13 @@ This board is specifically focused on gathering constructive feedback about usab
         isOpen={showFeedbackSuccess}
         onClose={() => setShowFeedbackSuccess(false)}
         title="Feedback Submitted Successfully! 🎉"
-        message="Your feedback has been stored on IPFS and added to the blockchain. Thank you for contributing to this board!"
+        message="Your feedback has been stored on IPFS and submitted on-chain via Solana blockchain. Thank you for contributing to this board!"
         actionText="View Updated Board"
         onAction={() => window.location.reload()}
         duration={6000}
       />
+      
+      <Footer />
     </div>
   );
 };

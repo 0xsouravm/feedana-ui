@@ -7,6 +7,7 @@ import HomePage from './pages/home';
 import BoardCreationStudio from './pages/board-creation';
 import BoardsList from './pages/boards-list';
 import BoardView from './pages/board-view';
+import HowItWorks from './pages/how-it-works';
 
 const Routes = () => {
   return (
@@ -20,6 +21,7 @@ const Routes = () => {
         <Route path="/board/create" element={<BoardCreationStudio />} />
         <Route path="/board/all" element={<BoardsList />} />
         <Route path="/board/:boardId" element={<BoardView />} />
+        <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="*" element={<NotFound />} />
       </RouterRoutes>
       </ErrorBoundary>

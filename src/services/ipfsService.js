@@ -92,6 +92,89 @@ export const ipfsService = {
     }
   },
 
+  async deleteFromIPFS(fileIds) {
+    try {
+      const sdk = await initializePinata();
+      if (!sdk) {
+        throw new Error('IPFS service not available');
+      }
+
+      // Ensure fileIds is an array
+      const idsToDelete = Array.isArray(fileIds) ? fileIds : [fileIds];
+      
+      // Filter out any null/undefined IDs
+      const validIds = idsToDelete.filter(id => id && id.trim());
+      
+      if (validIds.length === 0) {
+        console.log('IPFS: No valid file IDs to delete');
+        return { success: true, deletedIds: [] };
+      }
+      
+      const result = await sdk.files.public.delete(validIds);
+      
+      console.log('IPFS: Files deleted successfully:', result);
+      
+      return {
+        success: true,
+        deletedIds: validIds
+      };
+    } catch (error) {
+      console.error('IPFS: Delete failed:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to delete from IPFS'
+      };
+    }
+  },
+
+  async deleteByCID(cid) {
+    try {
+      const sdk = await initializePinata();
+      if (!sdk) {
+        throw new Error('IPFS service not available');
+      }
+      
+      console.log('🔍 Attempting to delete file by CID:', cid);
+      
+      // Use the proper Pinata API to find file by CID
+      console.log('📋 Finding file by CID using Pinata API...');
+      const files = await sdk.files.public.list().cid(cid);
+      console.log('📄 Files response:', files);
+      
+      if (files.files && files.files.length > 0) {
+        const fileToDelete = files.files[0]; // Get the first (should be only) file
+        
+        console.log('✅ Found file to delete:', {
+          id: fileToDelete.id,
+          cid: fileToDelete.cid,
+          name: fileToDelete.name
+        });
+        
+        // Use the correct Pinata SDK method with file ID
+        const result = await sdk.files.public.delete([fileToDelete.id]);
+        console.log('🗑️ File deleted successfully:', result);
+        
+        return { 
+          success: true, 
+          deletedCid: cid,
+          deletedId: fileToDelete.id
+        };
+      } else {
+        console.warn('❌ File not found with CID:', cid);
+        return { 
+          success: false, 
+          error: `File with CID ${cid} not found in Pinata` 
+        };
+      }
+    } catch (error) {
+      console.error('💥 Failed to delete file by CID:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to delete from IPFS'
+      };
+    }
+  },
+
   // Check if IPFS is available without initializing
   isAvailable() {
     const pinataJwt = import.meta.env.VITE_PINATA_JWT || import.meta.env.NEXT_PUBLIC_PINATA_JWT;

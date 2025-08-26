@@ -11,11 +11,11 @@ import { ipfsService } from "../../services/ipfsService";
 import {
   generateBoardHash,
   validateBoardData,
-} from "../../utils/simpleBoardUtils";
+} from "../../utils/boardUtils";
 import {
   createBoard,
   testSupabaseConnection,
-} from "../../utils/simpleSupabaseApi";
+} from "../../utils/supabaseApi";
 import { useAnchorWallet } from "@solana/wallet-adapter-react";
 import { createFeedbackBoard } from "../../services/anchorService";
 import { checkSolBalance, formatSolBalance } from "../../utils/balanceUtils";

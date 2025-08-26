@@ -5,8 +5,8 @@ import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import WalletConnectionModal from '../../../components/wallet/WalletConnectionModal';
 import ErrorNotification from '../../../components/ui/ErrorNotification';
-import { generateFeedbackHash } from '../../../utils/simpleBoardUtils';
-import { getBoardById, updateBoardIPFS } from '../../../utils/simpleSupabaseApi';
+import { generateFeedbackHash } from '../../../utils/boardUtils';
+import { getBoardById, updateBoardIPFS } from '../../../utils/supabaseApi';
 import { ipfsService } from '../../../services/ipfsService';
 import ipfsFetcher from '../../../utils/ipfsFetcher';
 import { submitFeedback } from '../../../services/anchorService';
@@ -428,23 +428,6 @@ const SubmissionModal = ({ isOpen, onClose, board, onSuccess, boardCreator }) =>
     setTags(tags?.filter(tag => tag !== tagToRemove));
   };
 
-  const getSentimentColor = (sentiment) => {
-    switch (sentiment) {
-      case 'positive': return 'text-success';
-      case 'negative': return 'text-error';
-      case 'neutral': return 'text-muted-foreground';
-      default: return 'text-muted-foreground';
-    }
-  };
-
-  const getSentimentIcon = (sentiment) => {
-    switch (sentiment) {
-      case 'positive': return 'TrendingUp';
-      case 'negative': return 'TrendingDown';
-      case 'neutral': return 'Minus';
-      default: return 'Minus';
-    }
-  };
 
   if (!isOpen) return null;
 

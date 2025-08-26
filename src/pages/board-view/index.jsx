@@ -9,7 +9,7 @@ import ShareModal from './components/ShareModal';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import SuccessNotification from '../../components/ui/SuccessNotification';
-import { getBoardById } from '../../utils/simpleSupabaseApi';
+import { getBoardById } from '../../utils/supabaseApi';
 import ipfsFetcher from '../../utils/ipfsFetcher';
 
 const BoardView = () => {

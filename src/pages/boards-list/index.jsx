@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import Header from '../../components/ui/Header';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
-import { getAllBoards } from '../../utils/simpleSupabaseApi';
+import { getAllBoards } from '../../utils/supabaseApi';
 import ipfsFetcher from '../../utils/ipfsFetcher';
 
 const BoardsList = () => {

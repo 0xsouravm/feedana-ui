@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Header from '../../components/ui/Header';
+import Footer from '../home/components/Footer';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import { getAllBoards } from '../../utils/supabaseApi';
@@ -244,6 +245,8 @@ const BoardsList = () => {
           )}
         </div>
       </main>
+      
+      <Footer />
     </div>
   );
 };

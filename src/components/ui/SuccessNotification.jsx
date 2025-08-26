@@ -85,7 +85,7 @@ const SuccessNotification = ({
           <Button
             variant="outline"
             onClick={handleClose}
-            className="border-border hover:bg-muted/30"
+            className="border-border hover:bg-muted/30 hover:text-white"
             fullWidth
           >
             Close

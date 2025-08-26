@@ -85,7 +85,7 @@ const ErrorNotification = ({
           <Button
             variant="outline"
             onClick={handleClose}
-            className="border-error/30 text-error hover:bg-error/10"
+            className="border-error/30 text-error hover:bg-error/10 hover:text-white"
             fullWidth
           >
             Close

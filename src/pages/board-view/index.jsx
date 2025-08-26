@@ -380,7 +380,7 @@ This board is specifically focused on gathering constructive feedback about usab
                   </code>
                 </div>
                 <p className="text-muted-foreground">
-                  doesn't exist or may have been removed.
+                  doesn't exist.
                 </p>
               </div>
               

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useWallet } from "@solana/wallet-adapter-react";
 import Header from "../../components/ui/Header";
+import Footer from "../home/components/Footer";
 import Icon from "../../components/AppIcon";
 import Button from "../../components/ui/Button";
 import WalletConnectionModal from "../../components/wallet/WalletConnectionModal";
@@ -926,41 +927,6 @@ const BoardCreationStudio = () => {
             </div>
           </section>
         </main>
-
-        {/* Footer */}
-        <footer className="section-padding py-8 border-t border-border/50">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex flex-col md:flex-row justify-between items-center">
-              <div className="flex items-center space-x-2 mb-4 md:mb-0">
-                <Icon name="MessageSquare" size={20} className="text-accent" />
-                <span className="text-sm text-muted-foreground">
-                  © {new Date()?.getFullYear()} Feedana. Simple feedback
-                  platform.
-                </span>
-              </div>
-              <div className="flex items-center space-x-6">
-                <a
-                  href="#"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Privacy Policy
-                </a>
-                <a
-                  href="#"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Terms of Service
-                </a>
-                <a
-                  href="#"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Support
-                </a>
-              </div>
-            </div>
-          </div>
-        </footer>
       </div>
 
       {/* Wallet Connection Modal */}
@@ -989,6 +955,8 @@ const BoardCreationStudio = () => {
         actionText={errorNotification.actionText}
         onAction={errorNotification.onAction}
       />
+      
+      <Footer />
     </>
   );
 };

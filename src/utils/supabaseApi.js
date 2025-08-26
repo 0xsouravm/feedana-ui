@@ -1,4 +1,5 @@
 import { supabase } from './supabaseConfig.ts';
+import ipfsFetcher from './ipfsFetcher';
 
 // Test Supabase connection
 export async function testSupabaseConnection() {
@@ -142,5 +143,41 @@ export async function updateBoardIPFS(boardId, newIPFSCID) {
   } catch (error) {
     console.error('Error updating board IPFS CID:', error);
     throw error;
+  }
+}
+
+// Get total feedback count across all boards
+export async function getTotalFeedbackCount() {
+  try {
+    console.log('Fetching total feedback count...');
+    
+    // Get all boards from database
+    const boards = await getAllBoards();
+    if (!boards || boards.length === 0) {
+      return 0;
+    }
+    
+    let totalCount = 0;
+    
+    // Count feedback from each board's IPFS data
+    for (const board of boards) {
+      if (board.ipfs_cid && board.ipfs_cid !== 'local-only' && ipfsFetcher.isAvailable()) {
+        try {
+          const ipfsData = await ipfsFetcher.fetchBoardData(board.ipfs_cid);
+          if (ipfsData && ipfsData.feedbacks) {
+            totalCount += ipfsData.feedbacks.length;
+          }
+        } catch (error) {
+          console.warn(`Failed to fetch IPFS data for board ${board.board_id}:`, error.message);
+          // Continue counting other boards
+        }
+      }
+    }
+    
+    console.log(`Total feedback count: ${totalCount}`);
+    return totalCount;
+  } catch (error) {
+    console.error('Error fetching total feedback count:', error);
+    return 0;
   }
 }

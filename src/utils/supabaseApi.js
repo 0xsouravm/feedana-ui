@@ -1,4 +1,4 @@
-import { supabase } from './supabaseConfig.js';
+import { supabase } from './supabaseConfig.ts';
 
 // Test Supabase connection
 export async function testSupabaseConnection() {

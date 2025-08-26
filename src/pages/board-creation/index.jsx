@@ -6,6 +6,7 @@ import Icon from "../../components/AppIcon";
 import Button from "../../components/ui/Button";
 import WalletConnectionModal from "../../components/wallet/WalletConnectionModal";
 import SuccessNotification from "../../components/ui/SuccessNotification";
+import ErrorNotification from "../../components/ui/ErrorNotification";
 import { ipfsService } from "../../services/ipfsService";
 import {
   generateBoardHash,
@@ -17,6 +18,7 @@ import {
 } from "../../utils/simpleSupabaseApi";
 import { useAnchorWallet } from "@solana/wallet-adapter-react";
 import { createFeedbackBoard } from "../../services/anchorService";
+import { checkSolBalance, formatSolBalance } from "../../utils/balanceUtils";
 
 const BoardCreationStudio = () => {
   const navigate = useNavigate();
@@ -30,6 +32,31 @@ const BoardCreationStudio = () => {
   useEffect(() => {
     testSupabaseConnection();
   }, []);
+
+  // Check balance when wallet connects
+  useEffect(() => {
+    const checkBalance = async () => {
+      if (connected && publicKey) {
+        setBalanceInfo(prev => ({ ...prev, isChecking: true }));
+        const result = await checkSolBalance(publicKey);
+        setBalanceInfo({
+          balance: result.balance,
+          hasEnoughBalance: result.hasEnoughBalance,
+          isChecking: false,
+          error: result.error
+        });
+      } else {
+        setBalanceInfo({
+          balance: 0,
+          hasEnoughBalance: true,
+          isChecking: false,
+          error: null
+        });
+      }
+    };
+
+    checkBalance();
+  }, [connected, publicKey]);
   const [isDeploying, setIsDeploying] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
 
@@ -44,6 +71,23 @@ const BoardCreationStudio = () => {
   const [errors, setErrors] = useState({});
   const [showSuccessNotification, setShowSuccessNotification] = useState(false);
   const [createdBoardId, setCreatedBoardId] = useState(null);
+  
+  // Error notification state
+  const [errorNotification, setErrorNotification] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    actionText: '',
+    onAction: null
+  });
+
+  // Balance checking state
+  const [balanceInfo, setBalanceInfo] = useState({
+    balance: 0,
+    hasEnoughBalance: true,
+    isChecking: false,
+    error: null
+  });
 
   // Categories for dropdown with icons
   const categories = [
@@ -200,85 +244,84 @@ const BoardCreationStudio = () => {
 
       console.log("Creating board with data:", boardData);
 
-      let ipfsCid = "local-only";
+      // Step 1: Upload to IPFS first
+      console.log("📁 Uploading to IPFS...");
+      const ipfsUploadResult = await ipfsService.uploadBoardToIPFS(boardData);
 
-      // Try to upload to IPFS if available
-      if (ipfsService.isAvailable()) {
-        console.log("IPFS available, attempting upload...");
-        const ipfsResult = await ipfsService.uploadBoardToIPFS(boardData);
-
-        if (ipfsResult.success) {
-          console.log("Board uploaded to IPFS:", ipfsResult);
-          ipfsCid = ipfsResult.cid;
-          boardData.ipfsHash = ipfsResult.cid;
-          boardData.ipfsUrl = ipfsResult.url;
-        } else {
-          console.warn(
-            "IPFS upload failed, continuing with local-only:",
-            ipfsResult.error
-          );
-        }
-      } else {
-        console.log("IPFS not available, creating board locally only");
+      if (!ipfsUploadResult.success) {
+        throw new Error(`IPFS upload failed: ${ipfsUploadResult.error}`);
       }
 
-      // Create board on-chain using Anchor
-      console.log("Creating board on-chain...");
+      console.log("✅ Board uploaded to IPFS:", ipfsUploadResult);
+      const ipfsCid = ipfsUploadResult.cid;
+      boardData.ipfsHash = ipfsCid;
+      boardData.ipfsUrl = ipfsUploadResult.url;
+
+      // Step 2: Create board on-chain using Anchor (CRITICAL STEP)
+      console.log("🔗 Creating board on-chain...");
       let anchorResult = null;
-      let anchorError = null;
+      let blockchainSuccess = false;
 
       try {
+        if (!wallet) {
+          throw new Error("Wallet not available for blockchain submission");
+        }
+        
         anchorResult = await createFeedbackBoard(wallet, boardId, ipfsCid);
-        console.log("Board created on-chain successfully:", anchorResult);
+        console.log("✅ Board created on-chain successfully:", anchorResult);
 
         // Add anchor data to board data
         boardData.anchorPda = anchorResult.pda.toString();
         boardData.anchorTx = anchorResult.tx;
         boardData.onChain = true;
+        blockchainSuccess = true;
+        
       } catch (error) {
-        console.error("Failed to create board on-chain:", error);
+        console.error("💥 Blockchain board creation failed:", error);
         console.error("Logs:", error.transactionLogs);
-        anchorError = error;
 
-        // Continue with local creation but mark as not on-chain
-        boardData.onChain = false;
-        boardData.anchorError = error.message;
-
-        // Show user-friendly error but don't completely fail
-        console.warn(
-          "Board will be created locally without blockchain integration"
-        );
+        // CRITICAL: Cleanup IPFS upload since blockchain failed
+        if (ipfsUploadResult.cid) {
+          console.log("🧹 Cleaning up IPFS upload due to blockchain failure...");
+          try {
+            await ipfsService.deleteByCID(ipfsUploadResult.cid);
+            console.log("✅ IPFS cleanup successful");
+          } catch (cleanupError) {
+            console.error("❌ IPFS cleanup failed:", cleanupError);
+          }
+        }
+        
+        // Re-throw the error to prevent database update
+        throw new Error(`Blockchain board creation failed: ${error.message}`);
       }
 
-      // Save to Supabase database
-      try {
-        console.log("Saving board to database...");
-        const dbPayload = {
-          owner: publicKey.toString(),
-          board_id: boardId,
-          ipfs_cid: ipfsCid,
-          anchor_pda: boardData.anchorPda || null,
-          anchor_tx: boardData.anchorTx || null,
-          on_chain: boardData.onChain || false,
-          title: formData.title,
-          description: formData.description,
-          category: formData.category,
-        };
+      // Step 3: Save to database ONLY if blockchain succeeded
+      if (blockchainSuccess) {
+        console.log("✅ Blockchain successful, saving to database...");
+        try {
+          const dbPayload = {
+            owner: publicKey.toString(),
+            board_id: boardId,
+            ipfs_cid: ipfsCid,
+            anchor_pda: boardData.anchorPda,
+            anchor_tx: boardData.anchorTx,
+            on_chain: true,
+            title: formData.title,
+            description: formData.description,
+            category: formData.category,
+          };
 
-        const dbResult = await createBoard(dbPayload);
-        console.log("Board saved to database:", dbResult);
-        boardData.dbId = dbResult.id;
-      } catch (dbError) {
-        console.error("Failed to save board to database:", dbError);
-        // If both anchor and database fail, show error
-        if (anchorError && dbError) {
-          alert(
-            "Failed to create board. Please check your connection and try again."
-          );
-          return;
+          const dbResult = await createBoard(dbPayload);
+          console.log("✅ Board saved to database:", dbResult);
+          boardData.dbId = dbResult.id;
+        } catch (dbError) {
+          console.error("💥 Database save failed:", dbError);
+          // Even if database fails, we don't cleanup since blockchain succeeded
+          // This is a recoverable state - the board exists on-chain and IPFS
+          console.warn("Board created on blockchain and IPFS but database save failed");
         }
-        // If only database fails, continue but warn user
-        console.warn("Board created but could not save to database");
+      } else {
+        throw new Error("Blockchain submission failed, board creation aborted");
       }
 
       console.log("Board creation completed:", boardData);
@@ -300,8 +343,109 @@ const BoardCreationStudio = () => {
       setCreatedBoardId(boardData.board_id);
       setShowSuccessNotification(true);
     } catch (error) {
-      console.error("Unexpected error creating board:", error);
-      alert("An unexpected error occurred. Please try again.");
+      console.error("💥 Board creation failed:", error);
+      
+      // Show user-friendly error message based on specific error types
+      const getErrorDetails = (error) => {
+        const errorMsg = error.message?.toLowerCase() || '';
+        const errorString = JSON.stringify(error).toLowerCase();
+        
+        // Check for insufficient balance errors
+        if (errorMsg.includes('insufficient') || 
+            errorMsg.includes('not enough') ||
+            errorMsg.includes('balance') ||
+            errorString.includes('insufficient') ||
+            errorString.includes('0x1') || // Solana insufficient funds error code
+            errorMsg.includes('account does not have enough sol')) {
+          return {
+            title: 'Insufficient Balance',
+            message: 'You don\'t have enough SOL to create this board. Please add more SOL to your wallet and try again.',
+            actionText: 'Add SOL'
+          };
+        }
+        
+        // Check for wallet connection errors
+        if (errorMsg.includes('wallet not connected') ||
+            errorMsg.includes('user rejected') ||
+            errorMsg.includes('user denied') ||
+            errorMsg.includes('user cancelled')) {
+          return {
+            title: 'Wallet Connection Issue',
+            message: 'Please connect your wallet and approve the transaction to create your board.',
+            actionText: 'Connect Wallet'
+          };
+        }
+        
+        // Check for network/RPC errors
+        if (errorMsg.includes('network') ||
+            errorMsg.includes('rpc') ||
+            errorMsg.includes('connection') ||
+            errorMsg.includes('timeout')) {
+          return {
+            title: 'Network Connection Error',
+            message: 'Unable to connect to the Solana network. Please check your internet connection and try again.',
+            actionText: 'Retry'
+          };
+        }
+        
+        // Check for IPFS service configuration errors
+        if (error.message.includes('No IPFS service available') ||
+            errorMsg.includes('ipfs service not available')) {
+          return {
+            title: 'Service Configuration Error',
+            message: 'IPFS service is not configured properly. Please contact support.',
+            actionText: 'Contact Support'
+          };
+        }
+        
+        // Check for IPFS upload errors
+        if (error.message.includes('IPFS upload failed') ||
+            errorMsg.includes('ipfs') ||
+            errorMsg.includes('pinata')) {
+          return {
+            title: 'IPFS Upload Failed',
+            message: 'Failed to upload board data to IPFS. Please check your internet connection and try again.',
+            actionText: 'Retry Upload'
+          };
+        }
+        
+        // Check for transaction failures
+        if (errorMsg.includes('transaction failed') ||
+            errorMsg.includes('simulation failed') ||
+            errorMsg.includes('blockhash not found')) {
+          return {
+            title: 'Transaction Failed',
+            message: 'The blockchain transaction failed. This might be due to network congestion. Please try again.',
+            actionText: 'Retry Transaction'
+          };
+        }
+        
+        // Default blockchain error
+        if (error.message.includes('Blockchain board creation failed')) {
+          return {
+            title: 'Blockchain Error',
+            message: 'The blockchain transaction encountered an error. Please try again or contact support if the issue persists.',
+            actionText: 'Try Again'
+          };
+        }
+        
+        // Generic error
+        return {
+          title: 'Board Creation Failed',
+          message: error.message || 'An unexpected error occurred. Please try again.',
+          actionText: 'Try Again'
+        };
+      };
+      
+      const errorDetails = getErrorDetails(error);
+      
+      setErrorNotification({
+        isOpen: true,
+        title: errorDetails.title,
+        message: errorDetails.message,
+        actionText: errorDetails.actionText,
+        onAction: null
+      });
     } finally {
       setIsDeploying(false);
     }
@@ -602,22 +746,31 @@ const BoardCreationStudio = () => {
                       <Button
                         variant="default"
                         size="lg"
-                        iconName={connected ? "Rocket" : "Wallet"}
+                        iconName={connected ? (balanceInfo.hasEnoughBalance ? "Rocket" : "AlertTriangle") : "Wallet"}
                         iconPosition="left"
-                        loading={isDeploying || connecting}
+                        loading={isDeploying || connecting || balanceInfo.isChecking}
                         onClick={handleCreate}
-                        className="w-full bg-accent text-accent-foreground hover:bg-accent/90 shadow-glow px-8 py-4 text-lg font-bold"
+                        className={`w-full shadow-glow px-8 py-4 text-lg font-bold ${
+                          connected && !balanceInfo.hasEnoughBalance 
+                            ? 'bg-error text-white hover:bg-error/90' 
+                            : 'bg-accent text-accent-foreground hover:bg-accent/90'
+                        }`}
                         disabled={
-                          connected &&
-                          (!formData?.title?.trim() ||
-                            !formData?.description?.trim() ||
-                            !formData?.category?.trim())
+                          (connected && !balanceInfo.hasEnoughBalance) ||
+                          (connected &&
+                            (!formData?.title?.trim() ||
+                              !formData?.description?.trim() ||
+                              !formData?.category?.trim()))
                         }
                       >
                         {isDeploying
                           ? "Creating Your Board..."
                           : connecting
                           ? "Connecting Wallet..."
+                          : balanceInfo.isChecking
+                          ? "Checking Balance..."
+                          : connected && !balanceInfo.hasEnoughBalance
+                          ? `Insufficient Balance (${formatSolBalance(balanceInfo.balance)})`
                           : connected
                           ? "Create Feedback Board"
                           : "Connect Wallet"}
@@ -825,6 +978,16 @@ const BoardCreationStudio = () => {
         actionText="View My Board"
         onAction={() => navigate(`/board/${createdBoardId}`)}
         duration={7000}
+      />
+
+      {/* Error Notification */}
+      <ErrorNotification
+        isOpen={errorNotification.isOpen}
+        onClose={() => setErrorNotification({ ...errorNotification, isOpen: false })}
+        title={errorNotification.title}
+        message={errorNotification.message}
+        actionText={errorNotification.actionText}
+        onAction={errorNotification.onAction}
       />
     </>
   );

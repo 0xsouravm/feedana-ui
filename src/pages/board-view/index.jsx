@@ -546,6 +546,7 @@ This board is specifically focused on gathering constructive feedback about usab
         isOpen={isSubmissionModalOpen}
         onClose={() => setIsSubmissionModalOpen(false)}
         board={selectedBoard || boardData}
+        boardCreator={boardIPFSData?.created_by}
         onSuccess={() => setShowFeedbackSuccess(true)}
       />
 
@@ -565,7 +566,7 @@ This board is specifically focused on gathering constructive feedback about usab
         isOpen={showFeedbackSuccess}
         onClose={() => setShowFeedbackSuccess(false)}
         title="Feedback Submitted Successfully! 🎉"
-        message="Your feedback has been stored on IPFS and added to the blockchain. Thank you for contributing to this board!"
+        message="Your feedback has been stored on IPFS and submitted on-chain via Solana blockchain. Thank you for contributing to this board!"
         actionText="View Updated Board"
         onAction={() => window.location.reload()}
         duration={6000}

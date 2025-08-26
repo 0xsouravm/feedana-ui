@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useWallet } from '@solana/wallet-adapter-react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 
 const BoardHeader = ({ board, onSubmitFeedback }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { connected, publicKey } = useWallet();
 
   const formatTimeAgo = (timeString) => {
     if (!timeString) return 'Unknown';
@@ -33,6 +35,10 @@ const BoardHeader = ({ board, onSubmitFeedback }) => {
   };
 
   const shouldShowExpansion = board?.description?.length > 200;
+  
+  // Check if current user is the board creator
+  const isCreator = connected && publicKey && board?.creator && 
+    publicKey.toString() === board.creator;
 
   return (
     <div className="glass-card p-8 rounded-2xl mb-8">
@@ -116,16 +122,28 @@ const BoardHeader = ({ board, onSubmitFeedback }) => {
 
         {/* Action Panel */}
         <div className="lg:w-80 space-y-4">
-          <Button
-            variant="default"
-            size="lg"
-            iconName="Plus"
-            iconPosition="left"
-            onClick={onSubmitFeedback}
-            className="w-full bg-accent text-accent-foreground hover:bg-accent/90 shadow-glow"
-          >
-            Submit Feedback
-          </Button>
+          {!isCreator ? (
+            <Button
+              variant="default"
+              size="lg"
+              iconName="Plus"
+              iconPosition="left"
+              onClick={onSubmitFeedback}
+              className="w-full bg-accent text-accent-foreground hover:bg-accent/90 shadow-glow"
+            >
+              Submit Feedback
+            </Button>
+          ) : (
+            <div className="w-full bg-muted/20 border border-border/30 rounded-xl p-4 text-center">
+              <Icon name="User" size={24} className="text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">
+                You created this board
+              </p>
+              <p className="text-xs text-muted-foreground/70 mt-1">
+                Share it with others to collect feedback
+              </p>
+            </div>
+          )}
 
           <div className="bg-muted/20 rounded-xl p-4">
             <div className="flex items-center space-x-2 mb-3">

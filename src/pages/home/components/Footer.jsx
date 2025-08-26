@@ -23,7 +23,7 @@ const Footer = () => {
     {
       title: "Developers",
       links: [
-        { name: "Frontend Code", path: "https://github.com/0xsouravm/feedana" },
+        { name: "Frontend Code", path: "https://github.com/0xsouravm/feedana-ui" },
         { name: "Smart Contract", path: "https://github.com/0xsouravm/feedana-program" },
       ]
     },

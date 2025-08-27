@@ -34,11 +34,11 @@ const BoardHeader = ({ board, onSubmitFeedback }) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  const shouldShowExpansion = board?.description?.length > 200;
+  const shouldShowExpansion = (board?.board_description || board?.description)?.length > 200;
   
   // Check if current user is the board creator
-  const isCreator = connected && publicKey && board?.creator && 
-    publicKey.toString() === board.creator;
+  const isCreator = connected && publicKey && (board?.created_by || board?.creator) && 
+    publicKey.toString() === (board.created_by || board.creator);
 
   return (
     <div className="glass-card p-8 rounded-2xl mb-8">
@@ -51,18 +51,18 @@ const BoardHeader = ({ board, onSubmitFeedback }) => {
             </div>
             <div>
               <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
-                {board?.title}
+                {board?.board_title || board?.title}
               </h1>
               <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
-                {board?.category && (
+                {(board?.board_category || board?.category) && (
                   <div className="flex items-center space-x-1">
                     <Icon name="Tag" size={14} />
-                    <span className="font-medium text-accent">{board.category}</span>
+                    <span className="font-medium text-accent">{board.board_category || board.category}</span>
                   </div>
                 )}
                 <div className="flex items-center space-x-1">
                   <Icon name="Calendar" size={14} />
-                  <span>Created {formatTimeAgo(board?.createdAt)}</span>
+                  <span>Created {formatTimeAgo(board?.created_at || board?.createdAt)}</span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <Icon name="MessageCircle" size={14} />
@@ -76,8 +76,8 @@ const BoardHeader = ({ board, onSubmitFeedback }) => {
           <div className="mb-6">
             <p className="text-muted-foreground leading-relaxed">
               {isExpanded || !shouldShowExpansion 
-                ? board?.description 
-                : `${board?.description?.substring(0, 200)}...`
+                ? (board?.board_description || board?.description)
+                : `${(board?.board_description || board?.description)?.substring(0, 200)}...`
               }
             </p>
             {shouldShowExpansion && (
@@ -90,13 +90,13 @@ const BoardHeader = ({ board, onSubmitFeedback }) => {
             )}
             
             {/* Creator Info */}
-            {board?.creator && (
+            {(board?.created_by || board?.creator) && (
               <div className="mt-4 p-3 bg-muted/10 rounded-lg border border-border/30">
                 <div className="flex items-center space-x-2 text-sm">
                   <Icon name="User" size={14} className="text-accent" />
                   <span className="text-muted-foreground">Created by:</span>
                   <span className="font-mono text-foreground bg-muted/20 px-2 py-1 rounded text-xs">
-                    {formatAddress(board.creator)}
+                    {formatAddress(board.created_by || board.creator)}
                   </span>
                 </div>
               </div>
@@ -157,7 +157,7 @@ const BoardHeader = ({ board, onSubmitFeedback }) => {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Created</span>
-                <span className="font-medium text-foreground">{formatTimeAgo(board?.createdAt)}</span>
+                <span className="font-medium text-foreground">{formatTimeAgo(board?.created_at || board?.createdAt)}</span>
               </div>
             </div>
           </div>

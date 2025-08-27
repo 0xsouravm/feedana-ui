@@ -34,24 +34,6 @@ const BoardView = () => {
 
   const itemsPerPage = 12;
 
-  // Mock board data - simplified without privacy features
-  const boardData = {
-    id: "board_001",
-    title: "Product Feedback Collection - Q4 2024",
-    description: `We're seeking honest feedback about our latest product features and user experience improvements. Your insights will directly influence our development roadmap for 2025.
-
-This board is specifically focused on gathering constructive feedback about usability, performance, and feature requests. All feedback is welcome.`,
-    createdAt: "3 days ago",
-    totalSubmissions: 127,
-    guidelines: [
-      "Be specific and constructive",
-      "Focus on user experience", 
-      "Include examples when possible",
-      "Minimum 50 characters",
-      "Maximum 2000 characters"
-    ]
-  };
-
 
   // Calculate real stats from IPFS data
   const calculateStatsFromIPFS = () => {
@@ -78,15 +60,31 @@ This board is specifically focused on gathering constructive feedback about usab
 
     // Calculate average response time (simulate based on feedback frequency)
     const now = Date.now();
-    const recentFeedbacks = (realFeedback || []).filter(f => 
-      f?.timestamp && (now - new Date(f.timestamp).getTime()) < 7 * 24 * 60 * 60 * 1000 // Last 7 days
-    );
+    const recentFeedbacks = (realFeedback || []).filter(f => {
+      if (!f?.timestamp) return false;
+      try {
+        const feedbackTime = f.timestamp instanceof Date ? f.timestamp.getTime() : new Date(f.timestamp).getTime();
+        if (isNaN(feedbackTime)) return false;
+        return (now - feedbackTime) < 7 * 24 * 60 * 60 * 1000; // Last 7 days
+      } catch (error) {
+        return false;
+      }
+    });
     const avgResponseTime = recentFeedbacks.length > 1 ? '1.2h' : '2.5h';
 
     // Generate recent activity from real feedback
     const recentActivity = (realFeedback || [])
       .filter(f => f?.timestamp)
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .sort((a, b) => {
+        try {
+          const aTime = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
+          const bTime = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
+          if (isNaN(aTime) || isNaN(bTime)) return 0;
+          return bTime - aTime;
+        } catch (error) {
+          return 0;
+        }
+      })
       .slice(0, 4)
       .map(feedback => {
         const timeAgo = getTimeAgo(feedback.timestamp);
@@ -113,28 +111,50 @@ This board is specifically focused on gathering constructive feedback about usab
 
   // Helper function to get time ago string
   const getTimeAgo = (timestamp) => {
-    const now = Date.now();
-    const feedbackTime = timestamp instanceof Date ? timestamp.getTime() : new Date(timestamp).getTime();
-    const diff = now - feedbackTime;
-    const minutes = Math.floor(diff / (1000 * 60));
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-    const weeks = Math.floor(days / 7);
-    const months = Math.floor(days / 30);
-    const years = Math.floor(days / 365);
+    try {
+      if (!timestamp) return 'Just now';
+      
+      const now = Date.now();
+      let feedbackTime;
+      
+      if (timestamp instanceof Date) {
+        feedbackTime = timestamp.getTime();
+      } else {
+        const parsedDate = new Date(timestamp);
+        if (isNaN(parsedDate.getTime())) {
+          return 'Just now';
+        }
+        feedbackTime = parsedDate.getTime();
+      }
+      
+      const diff = now - feedbackTime;
+      
+      // If diff is negative or NaN, return 'Just now'
+      if (diff < 0 || isNaN(diff)) return 'Just now';
+      
+      const minutes = Math.floor(diff / (1000 * 60));
+      const hours = Math.floor(minutes / 60);
+      const days = Math.floor(hours / 24);
+      const weeks = Math.floor(days / 7);
+      const months = Math.floor(days / 30);
+      const years = Math.floor(days / 365);
 
-    if (years > 0) return `${years} year${years > 1 ? 's' : ''} ago`;
-    if (months > 0) return `${months} month${months > 1 ? 's' : ''} ago`;
-    if (weeks > 0) return `${weeks} week${weeks > 1 ? 's' : ''} ago`;
-    if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
-    if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-    if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-    return 'Just now';
+      if (years > 0) return `${years} year${years > 1 ? 's' : ''} ago`;
+      if (months > 0) return `${months} month${months > 1 ? 's' : ''} ago`;
+      if (weeks > 0) return `${weeks} week${weeks > 1 ? 's' : ''} ago`;
+      if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+      if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+      if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+      return 'Just now';
+    } catch (error) {
+      console.warn('Error parsing timestamp in getTimeAgo:', timestamp, error);
+      return 'Just now';
+    }
   };
 
 
   // Filter and sort feedback - use real feedback when available
-  const feedbackToUse = realFeedback.length > 0 ? realFeedback : [];
+  const feedbackToUse = Array.isArray(realFeedback) && realFeedback.length > 0 ? realFeedback : [];
   
   const filteredFeedback = (feedbackToUse || []).filter(feedback => {
     if (!feedback) return false;
@@ -148,15 +168,26 @@ This board is specifically focused on gathering constructive feedback about usab
 
   const sortedFeedback = (filteredFeedback || []).sort((a, b) => {
     if (!a || !b) return 0;
-    switch (sortBy) {
-      case 'newest':
-        return new Date(b.timestamp || 0) - new Date(a.timestamp || 0);
-      case 'oldest':
-        return new Date(a.timestamp || 0) - new Date(b.timestamp || 0);
-      case 'helpful':
-        return (b?.helpful || 0) - (a?.helpful || 0);
-      default:
-        return 0;
+    try {
+      switch (sortBy) {
+        case 'newest':
+          const bTime = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp || 0).getTime();
+          const aTime = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp || 0).getTime();
+          if (isNaN(bTime) || isNaN(aTime)) return 0;
+          return bTime - aTime;
+        case 'oldest':
+          const aTimeOld = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp || 0).getTime();
+          const bTimeOld = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp || 0).getTime();
+          if (isNaN(aTimeOld) || isNaN(bTimeOld)) return 0;
+          return aTimeOld - bTimeOld;
+        case 'helpful':
+          return (b?.helpful || 0) - (a?.helpful || 0);
+        default:
+          return 0;
+      }
+    } catch (error) {
+      console.warn('Error sorting feedback:', error);
+      return 0;
     }
   });
 
@@ -191,14 +222,14 @@ This board is specifically focused on gathering constructive feedback about usab
       const exportData = {
         export_info: {
           exported_at: new Date().toISOString(),
-          board_id: selectedBoard.id,
+          board_id: selectedBoard.board_id || selectedBoard.id,
           total_feedbacks: realFeedback.length,
           export_version: '1.0'
         },
         board_data: boardIPFSData,
         processed_feedbacks: realFeedback.map(feedback => ({
           ...feedback,
-          timestamp: feedback.timestamp.toISOString() // Convert Date to string for JSON
+          timestamp: feedback.timestamp instanceof Date ? feedback.timestamp.toISOString() : new Date().toISOString() // Safe conversion
         })),
         statistics: calculateStatsFromIPFS()
       };
@@ -213,7 +244,7 @@ This board is specifically focused on gathering constructive feedback about usab
       // Create download link
       const link = document.createElement('a');
       link.href = url;
-      link.download = `board-${selectedBoard.id}-export-${new Date().toISOString().split('T')[0]}.json`;
+      link.download = `board-${selectedBoard.board_id || selectedBoard.id}-export-${new Date().toISOString().split('T')[0]}.json`;
       document.body.appendChild(link);
       link.click();
       
@@ -294,14 +325,31 @@ This board is specifically focused on gathering constructive feedback about usab
             console.log(`Found ${feedbacks.length} feedbacks in IPFS data`);
             
             // Transform IPFS feedback format to component format
-            const transformedFeedbacks = feedbacks.map((feedback, index) => ({
-              id: feedback.feedback_id || `fb_${index}`,
-              content: feedback.feedback_text || feedback.content,
-              timestamp: new Date(feedback.created_at),
-              sentiment: feedback.feedback_type || 'neutral',
-              tags: feedback.tags || [], // Use stored tags from IPFS
-              createdBy: feedback.created_by
-            }));
+            const transformedFeedbacks = feedbacks.map((feedback, index) => {
+              // Safe timestamp parsing
+              let timestamp = new Date();
+              try {
+                if (feedback.created_at) {
+                  timestamp = new Date(feedback.created_at);
+                  // Check if date is valid
+                  if (isNaN(timestamp.getTime())) {
+                    timestamp = new Date();
+                  }
+                }
+              } catch (error) {
+                console.warn('Invalid timestamp for feedback:', feedback.created_at);
+                timestamp = new Date();
+              }
+
+              return {
+                id: feedback.feedback_id || `fb_${index}`,
+                content: feedback.feedback_text || feedback.content || '',
+                timestamp: timestamp,
+                sentiment: feedback.feedback_type || 'neutral',
+                tags: Array.isArray(feedback.tags) ? feedback.tags : [], // Ensure tags is always an array
+                createdBy: feedback.created_by || 'Anonymous'
+              };
+            });
             
             setRealFeedback(transformedFeedbacks);
           } else {
@@ -331,7 +379,7 @@ This board is specifically focused on gathering constructive feedback about usab
   }, [boardId]);
 
   // Don't render main content if board is loading or not found
-  if (isBoardLoading) {
+  if (isBoardLoading || !selectedBoard) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -444,15 +492,19 @@ This board is specifically focused on gathering constructive feedback about usab
           {/* Board Header */}
           <BoardHeader 
             board={{
-              ...(selectedBoard || boardData),
+              ...selectedBoard,
               // Override with real IPFS data if available
               ...(boardIPFSData && {
-                title: boardIPFSData.board_title,
-                description: boardIPFSData.board_description,
-                category: boardIPFSData.board_category,
-                createdAt: boardIPFSData.created_at,
+                board_title: boardIPFSData.board_title,
+                title: boardIPFSData.board_title, // Keep both for compatibility
+                board_description: boardIPFSData.board_description,
+                description: boardIPFSData.board_description, // Keep both for compatibility
+                board_category: boardIPFSData.board_category,
+                category: boardIPFSData.board_category, // Keep both for compatibility
+                created_at: boardIPFSData.created_at,
+                createdAt: boardIPFSData.created_at, // Keep both for compatibility
                 totalSubmissions: boardIPFSData.total_feedback_count,
-                creator: boardIPFSData.created_by
+                created_by: boardIPFSData.created_by
               })
             }}
             onSubmitFeedback={handleSubmitFeedback}
@@ -640,7 +692,7 @@ This board is specifically focused on gathering constructive feedback about usab
       <SubmissionModal
         isOpen={isSubmissionModalOpen}
         onClose={() => setIsSubmissionModalOpen(false)}
-        board={selectedBoard || boardData}
+        board={selectedBoard}
         boardCreator={boardIPFSData?.created_by}
         onSuccess={() => setShowFeedbackSuccess(true)}
       />
@@ -651,8 +703,8 @@ This board is specifically focused on gathering constructive feedback about usab
         onClose={() => setIsShareModalOpen(false)}
         board={{
           id: selectedBoard?.id,
-          title: boardIPFSData?.board_title || selectedBoard?.title || boardData.title,
-          description: boardIPFSData?.board_description || selectedBoard?.description || boardData.description
+          title: boardIPFSData?.board_title || selectedBoard?.title,
+          description: boardIPFSData?.board_description || selectedBoard?.board_description || selectedBoard?.description
         }}
       />
 

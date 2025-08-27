@@ -2,12 +2,14 @@
 
 <div align="center">
 
+
 [![React](https://img.shields.io/badge/React-18.2.0-blue.svg)](https://reactjs.org/)
 [![Solana](https://img.shields.io/badge/Solana-Blockchain-green.svg)](https://solana.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-Database-orange.svg)](https://supabase.com/)
 [![IPFS](https://img.shields.io/badge/IPFS-Distributed_Storage-yellow.svg)](https://ipfs.io/)
 [![TailwindCSS](https://img.shields.io/badge/TailwindCSS-Styling-38B2AC.svg)](https://tailwindcss.com/)
 
+![Feedana Preview](./public/assets/images/readme.png)
 **Anonymous feedback collection without the politics - no registration, no retaliation**
 
 [🌐 Live Demo](https://feedana.top) | [📚 Documentation](#🎨-architecture) | [🤝 Contributing](#🤝-contributing)

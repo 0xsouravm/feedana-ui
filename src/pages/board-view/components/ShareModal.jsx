@@ -37,8 +37,8 @@ const ShareModal = ({ isOpen, onClose, board, boardUrl }) => {
   
   const fullUrl = boardUrl || `${window.location.origin}/board/${board?.id}`;
   const encodedUrl = encodeURIComponent(fullUrl);
-  const encodedTitle = encodeURIComponent(board?.title || 'Feedback Board');
-  const encodedDescription = encodeURIComponent(board?.description || 'Share your feedback on this board');
+  const encodedTitle = encodeURIComponent((board?.board_title || board?.title) || 'Feedback Board');
+  const encodedDescription = encodeURIComponent((board?.board_description || board?.description) || 'Share your feedback on this board');
 
   // Social sharing URLs
   const shareUrls = {
@@ -73,8 +73,8 @@ const ShareModal = ({ isOpen, onClose, board, boardUrl }) => {
   };
 
   const handleEmailShare = () => {
-    const subject = encodeURIComponent(`Feedback Request: ${board?.title || 'Feedback Board'}`);
-    const body = encodeURIComponent(`Hi there!\n\nI'd love to get your feedback on: ${board?.title || 'my project'}\n\n${board?.description || 'Please share your honest thoughts and suggestions.'}\n\nYou can submit your feedback here: ${fullUrl}\n\nThanks for your time!`);
+    const subject = encodeURIComponent(`Feedback Request: ${(board?.board_title || board?.title) || 'Feedback Board'}`);
+    const body = encodeURIComponent(`Hi there!\n\nI'd love to get your feedback on: ${(board?.board_title || board?.title) || 'my project'}\n\n${(board?.board_description || board?.description) || 'Please share your honest thoughts and suggestions.'}\n\nYou can submit your feedback here: ${fullUrl}\n\nThanks for your time!`);
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 

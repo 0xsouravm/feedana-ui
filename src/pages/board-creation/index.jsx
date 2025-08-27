@@ -233,14 +233,6 @@ const BoardCreationStudio = () => {
         latest_feedback_at: "",
         total_feedback_count: 0,
         feedbacks: [],
-        // Legacy fields for compatibility
-        boardId,
-        title: formData.title,
-        description: formData.description,
-        category: formData.category,
-        creator: publicKey.toString(),
-        createdAt: new Date().toISOString(),
-        version: "1.0",
       };
 
       console.log("Creating board with data:", boardData);

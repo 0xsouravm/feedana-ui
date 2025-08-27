@@ -3,7 +3,7 @@ import { Connection, PublicKey } from '@solana/web3.js';
 import idl from '../target/idl/feedana.json';
 
 // Your deployed program ID
-const PROGRAM_ID = new PublicKey('8YsNicGdBn86spF22Kk4rTB59HpGrs1wWGUedjuEr2U5');
+const PROGRAM_ID = new PublicKey('3TwZoBQB7g8roimCHwUW7JTEHjGeZwvjcdQM5AeddqMY');
 const PLATFORM_WALLET = new PublicKey('96fN4Eegj84PaUcyEJrxUztDjo7Q7MySJzV2skLfgchY');
 
 // Devnet connection

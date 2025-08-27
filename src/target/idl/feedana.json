@@ -1,5 +1,5 @@
 {
-  "address": "8YsNicGdBn86spF22Kk4rTB59HpGrs1wWGUedjuEr2U5",
+  "address": "3TwZoBQB7g8roimCHwUW7JTEHjGeZwvjcdQM5AeddqMY",
   "metadata": {
     "name": "feedana",
     "version": "0.1.0",
@@ -167,6 +167,34 @@
       ]
     }
   ],
+  "events": [
+    {
+      "name": "FeedbackBoardCreated",
+      "discriminator": [
+        164,
+        159,
+        92,
+        223,
+        9,
+        26,
+        19,
+        63
+      ]
+    },
+    {
+      "name": "FeedbackSubmitted",
+      "discriminator": [
+        41,
+        21,
+        127,
+        219,
+        28,
+        103,
+        196,
+        49
+      ]
+    }
+  ],
   "errors": [
     {
       "code": 6000,
@@ -217,6 +245,11 @@
       "code": 6009,
       "name": "UnauthorizedAccess",
       "msg": "Unauthorized access - only the creator can modify this board"
+    },
+    {
+      "code": 6010,
+      "name": "CreatorCannotSubmit",
+      "msg": "The board creator cannot submit a feedback in their own board"
     }
   ],
   "types": [
@@ -236,6 +269,46 @@
           {
             "name": "board_id",
             "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FeedbackBoardCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "board_id",
+            "type": "string"
+          },
+          {
+            "name": "ipfs_cid",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FeedbackSubmitted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "board_id",
+            "type": "string"
+          },
+          {
+            "name": "new_ipfs_cid",
+            "type": "string"
+          },
+          {
+            "name": "feedback_giver",
+            "type": "pubkey"
           }
         ]
       }

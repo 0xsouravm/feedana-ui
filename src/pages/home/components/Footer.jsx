@@ -17,7 +17,7 @@ const Footer = () => {
       title: "Support",
       links: [
         { name: "How This Works", path: "/how-it-works" },
-        { name: "Contact Support", path: "#" },
+        // { name: "Contact Support", path: "#" },
       ]
     },
     {

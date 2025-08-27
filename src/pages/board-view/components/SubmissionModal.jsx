@@ -150,7 +150,7 @@ const SubmissionModal = ({ isOpen, onClose, board, onSuccess, boardCreator }) =>
       console.log('Starting feedback submission process...');
       
       // Step 1: Get board data from database
-      const boardDbData = await getBoardById(board.id);
+      const boardDbData = await getBoardById(board.board_id || board.id);
       if (!boardDbData) {
         throw new Error('Board not found in database');
       }
@@ -192,9 +192,9 @@ const SubmissionModal = ({ isOpen, onClose, board, onSuccess, boardCreator }) =>
       const updatedBoardData = {
         ...currentBoardData,
         // Ensure we have the basic board structure
-        board_id: currentBoardData?.board_id || board.id,
-        board_title: currentBoardData?.board_title || board.title,
-        board_description: currentBoardData?.board_description || board.description,
+        board_id: currentBoardData?.board_id || board.board_id || board.id,
+        board_title: currentBoardData?.board_title || board.board_title || board.title,
+        board_description: currentBoardData?.board_description || board.board_description || board.description,
         board_category: currentBoardData?.board_category || 'General',
         created_by: currentBoardData?.created_by || boardDbData.owner,
         created_at: currentBoardData?.created_at || boardDbData.created_at,
@@ -231,7 +231,7 @@ const SubmissionModal = ({ isOpen, onClose, board, onSuccess, boardCreator }) =>
       console.log('🚀 Submitting feedback on-chain...');
       console.log('Wallet:', wallet?.publicKey?.toString());
       console.log('Board creator:', boardDbData.created_by || boardDbData.owner);
-      console.log('Board ID:', board.id);
+      console.log('Board ID:', board.board_id || board.id);
       console.log('IPFS CID:', ipfsUploadResult.cid);
       
       try {
@@ -246,7 +246,7 @@ const SubmissionModal = ({ isOpen, onClose, board, onSuccess, boardCreator }) =>
         anchorTx = await submitFeedback(
           wallet,
           creatorPubkey,
-          board.id,
+          board.board_id || board.id,
           ipfsUploadResult.cid
         );
         
@@ -299,7 +299,7 @@ const SubmissionModal = ({ isOpen, onClose, board, onSuccess, boardCreator }) =>
         }
         
         // Update database with new CID
-        await updateBoardIPFS(board.id, ipfsUploadResult.cid);
+        await updateBoardIPFS(board.board_id || board.id, ipfsUploadResult.cid);
         console.log('✅ Database updated with new CID:', ipfsUploadResult.cid);
       } else {
         throw new Error('Blockchain submission failed, database and IPFS remain unchanged');

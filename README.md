@@ -10,7 +10,7 @@
 
 **Anonymous feedback collection without the politics - no registration, no retaliation**
 
-[🌐 Live Demo](https://feedana.vercel.app) | [📚 Documentation](#🎨-architecture) | [🤝 Contributing](#🤝-contributing)
+[🌐 Live Demo](https://feedana.top) | [📚 Documentation](#🎨-architecture) | [🤝 Contributing](#🤝-contributing)
 
 </div>
 

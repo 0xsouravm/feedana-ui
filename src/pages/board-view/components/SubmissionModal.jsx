@@ -11,6 +11,7 @@ import { ipfsService } from '../../../services/ipfsService';
 import ipfsFetcher from '../../../utils/ipfsFetcher';
 import { submitFeedback } from '../../../services/anchorService';
 import { checkSolBalance, formatSolBalance } from '../../../utils/balanceUtils';
+import { aiService } from '../../../services/aiService';
 
 const SubmissionModal = ({ isOpen, onClose, board, onSuccess, boardCreator }) => {
   // Wallet connection
@@ -165,7 +166,26 @@ const SubmissionModal = ({ isOpen, onClose, board, onSuccess, boardCreator }) =>
         currentBoardData = ipfsResult;
       }
       
-      // Step 3: Generate feedback ID and create new feedback object
+      // Step 3: Analyze sentiment using AI service
+      console.log('🤖 Analyzing feedback sentiment...');
+      console.log('Content to analyze:', content);
+      let analyzedSentiment = sentiment; // fallback to manual selection
+      
+      try {
+        // Validate content before sending to AI
+        if (content && typeof content === 'string' && content.trim().length > 0) {
+          analyzedSentiment = await aiService.analyzeSentiment(content.trim());
+          console.log(`✅ AI sentiment analysis: ${analyzedSentiment}`);
+        } else {
+          console.warn('⚠️ Invalid content for sentiment analysis, using manual selection');
+          analyzedSentiment = sentiment;
+        }
+      } catch (sentimentError) {
+        console.warn('⚠️ AI sentiment analysis failed, using manual selection:', sentimentError);
+        analyzedSentiment = sentiment; // fallback to user's manual selection
+      }
+
+      // Step 4: Generate feedback ID and create new feedback object
       const timestamp = new Date().toISOString();
       const feedbackId = await generateFeedbackHash(
         publicKey.toString(),
@@ -182,13 +202,13 @@ const SubmissionModal = ({ isOpen, onClose, board, onSuccess, boardCreator }) =>
       const newFeedback = {
         feedback_id: feedbackId,
         feedback_text: content,
-        feedback_type: sentiment,
+        feedback_type: analyzedSentiment, // Use AI-analyzed sentiment
         created_by: publicKey.toString(),
         created_at: timestamp,
         tags: formattedTags
       };
       
-      // Step 4: Update board data with new feedback
+      // Step 5: Update board data with new feedback
       const updatedBoardData = {
         ...currentBoardData,
         // Ensure we have the basic board structure
@@ -210,7 +230,7 @@ const SubmissionModal = ({ isOpen, onClose, board, onSuccess, boardCreator }) =>
       
       console.log('Updated board data:', updatedBoardData);
       
-      // Step 5: Upload new version to IPFS (keep original untouched for now)
+      // Step 6: Upload new version to IPFS (keep original untouched for now)
       const oldCid = boardDbData.ipfs_cid;
       
       // Upload the new version (original stays untouched)
@@ -224,7 +244,7 @@ const SubmissionModal = ({ isOpen, onClose, board, onSuccess, boardCreator }) =>
       console.log('✅ New IPFS version uploaded:', ipfsUploadResult);
       console.log('📝 Original file still exists at CID:', oldCid);
       
-      // Step 6: Submit feedback on-chain using Anchor (CRITICAL STEP)
+      // Step 7: Submit feedback on-chain using Anchor (CRITICAL STEP)
       let anchorTx = null;
       let blockchainSuccess = false;
       

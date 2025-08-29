@@ -65,3 +65,55 @@ export const submitFeedback = async (wallet, creator, boardId, newIpfsCid) => {
     
   return tx;
 };
+
+// Upvote feedback on-chain
+export const upvoteFeedback = async (wallet, creator, boardId, newIpfsCid) => {
+  const program = getProgram(wallet);
+  const [feedbackBoardPda] = getFeedbackBoardPDA(creator, boardId);
+  
+  const tx = await program.methods
+    .upvoteFeedback(newIpfsCid)
+    .accounts({
+      feedbackBoard: feedbackBoardPda,
+      voter: wallet.publicKey,
+      platformWallet: PLATFORM_WALLET,
+      systemProgram: anchor.web3.SystemProgram.programId,
+    })
+    .rpc();
+    
+  return tx;
+};
+
+// Downvote feedback on-chain
+export const downvoteFeedback = async (wallet, creator, boardId, newIpfsCid) => {
+  const program = getProgram(wallet);
+  const [feedbackBoardPda] = getFeedbackBoardPDA(creator, boardId);
+  
+  const tx = await program.methods
+    .downvoteFeedback(newIpfsCid)
+    .accounts({
+      feedbackBoard: feedbackBoardPda,
+      voter: wallet.publicKey,
+      platformWallet: PLATFORM_WALLET,
+      systemProgram: anchor.web3.SystemProgram.programId,
+    })
+    .rpc();
+    
+  return tx;
+};
+
+// Archive feedback board on-chain
+export const archiveFeedbackBoard = async (wallet, boardId) => {
+  const program = getProgram(wallet);
+  const [feedbackBoardPda] = getFeedbackBoardPDA(wallet.publicKey, boardId);
+  
+  const tx = await program.methods
+    .archiveFeedbackBoard()
+    .accounts({
+      feedbackBoard: feedbackBoardPda,
+      creator: wallet.publicKey,
+    })
+    .rpc();
+    
+  return tx;
+};

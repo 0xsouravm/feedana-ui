@@ -3,8 +3,10 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 
-const BoardHeader = ({ board, onSubmitFeedback }) => {
+const BoardHeader = ({ board, onSubmitFeedback, onArchiveBoard }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
   const { connected, publicKey } = useWallet();
 
   const formatTimeAgo = (timeString) => {
@@ -39,6 +41,21 @@ const BoardHeader = ({ board, onSubmitFeedback }) => {
   // Check if current user is the board creator
   const isCreator = connected && publicKey && (board?.created_by || board?.creator) && 
     publicKey.toString() === (board.created_by || board.creator);
+    
+  // Check if board is archived
+  const isArchived = board?.is_archived || board?.archived;
+
+  const handleArchiveConfirm = async () => {
+    setIsArchiving(true);
+    try {
+      await onArchiveBoard();
+      setShowArchiveConfirm(false);
+    } catch (error) {
+      console.error('Failed to archive board:', error);
+    } finally {
+      setIsArchiving(false);
+    }
+  };
 
   return (
     <div className="glass-card p-8 rounded-2xl mb-8">
@@ -122,7 +139,19 @@ const BoardHeader = ({ board, onSubmitFeedback }) => {
 
         {/* Action Panel */}
         <div className="lg:w-80 space-y-4">
-          {!isCreator ? (
+          {isArchived && (
+            <div className="w-full bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-center">
+              <Icon name="Archive" size={24} className="text-red-500 mx-auto mb-2" />
+              <p className="text-sm text-red-500 font-medium">
+                Board Archived
+              </p>
+              <p className="text-xs text-red-500/70 mt-1">
+                No new feedback can be submitted
+              </p>
+            </div>
+          )}
+          
+          {!isArchived && !isCreator ? (
             <Button
               variant="default"
               size="lg"
@@ -133,17 +162,29 @@ const BoardHeader = ({ board, onSubmitFeedback }) => {
             >
               Submit Feedback
             </Button>
-          ) : (
-            <div className="w-full bg-muted/20 border border-border/30 rounded-xl p-4 text-center">
-              <Icon name="User" size={24} className="text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">
-                You created this board
-              </p>
-              <p className="text-xs text-muted-foreground/70 mt-1">
-                Share it with others to collect feedback
-              </p>
+          ) : !isArchived && isCreator ? (
+            <div className="space-y-3">
+              <div className="w-full bg-muted/20 border border-border/30 rounded-xl p-4 text-center">
+                <Icon name="User" size={24} className="text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  You created this board
+                </p>
+                <p className="text-xs text-muted-foreground/70 mt-1">
+                  Share it with others to collect feedback
+                </p>
+              </div>
+              <Button
+                variant="destructive"
+                size="sm"
+                iconName="Archive"
+                iconPosition="left"
+                onClick={() => setShowArchiveConfirm(true)}
+                className="w-full"
+              >
+                Archive Board
+              </Button>
             </div>
-          )}
+          ) : null}
 
           <div className="bg-muted/20 rounded-xl p-4">
             <div className="flex items-center space-x-2 mb-3">
@@ -173,6 +214,56 @@ const BoardHeader = ({ board, onSubmitFeedback }) => {
           </div>
         </div>
       </div>
+
+      {/* Archive Confirmation Modal */}
+      {showArchiveConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background border border-border/30 rounded-2xl p-6 max-w-md w-full shadow-2xl">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Icon name="Archive" size={32} className="text-red-500" />
+              </div>
+              
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                Archive Feedback Board?
+              </h3>
+              
+              <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+                Once archived, no new feedback can be submitted to this board. 
+                Existing feedback will remain visible. This action cannot be undone.
+              </p>
+              
+              <div className="flex space-x-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowArchiveConfirm(false)}
+                  disabled={isArchiving}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleArchiveConfirm}
+                  disabled={isArchiving}
+                  className="flex-1"
+                >
+                  {isArchiving ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                      <span>Archiving...</span>
+                    </div>
+                  ) : (
+                    'Archive Board'
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

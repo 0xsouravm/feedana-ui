@@ -59,6 +59,18 @@ Create a feedback ecosystem where honest opinions can be shared without fear of 
 - No single point of failure
 - Immutable feedback records
 
+### 🗳️ **Voting System**
+- Upvote/downvote feedback submissions
+- Simple feedback ranking
+- User-driven content rating
+- Vote tracking on blockchain
+
+### 📁 **Board Management**
+- Archive boards when feedback collection is complete
+- Prevent new submissions to archived boards
+- Maintain historical feedback data
+- Creator-controlled board lifecycle
+
 ### 🎨 **Beautiful & Intuitive**
 - Modern, responsive design
 - Interactive animations with GSAP
@@ -142,6 +154,28 @@ sequenceDiagram
     Solana->>Frontend: Transaction Successful
     Frontend->>Supabase: Update Board CID
     Supabase->>Frontend: Updated
+    
+    Note over User, Supabase: Voting Flow
+    User->>Frontend: Vote on Feedback
+    Frontend->>IPFS: Fetch Current Data
+    IPFS->>Frontend: Board Data
+    Frontend->>IPFS: Upload Data with Votes
+    IPFS->>Frontend: New CID
+    Frontend->>Solana: Update CID with Vote
+    Solana->>Frontend: Vote Recorded
+    Frontend->>Supabase: Update Board CID
+    Supabase->>Frontend: Updated
+    
+    Note over User, Supabase: Board Archival Flow
+    User->>Frontend: Archive Board
+    Frontend->>IPFS: Fetch Current Data
+    IPFS->>Frontend: Board Data
+    Frontend->>IPFS: Upload Data with is_archived=true
+    IPFS->>Frontend: New CID
+    Frontend->>Solana: Archive Board Onchain
+    Solana->>Frontend: Board Archived
+    Frontend->>Supabase: Update with New CID
+    Supabase->>Frontend: Status Updated
 ```
 
 Feedana follows a decentralized architecture with three core layers:
@@ -155,6 +189,51 @@ Feedana follows a decentralized architecture with three core layers:
 - **Solana Network** - High-performance blockchain for board ownership and transactions
 - **Anchor Program** - Smart contract framework for program logic
 - **Program Derived Addresses (PDAs)** - Deterministic accounts for board management
+
+#### Program Instructions
+The smart contract implements 5 core instructions with comprehensive validation and fee collection:
+
+- **`create_feedback_board`** - Initialize new feedback boards with metadata and IPFS integration (Platform fee: 10 lamports)
+- **`submit_feedback`** - Process anonymous feedback submissions and update IPFS storage (Platform fee: 1 lamport)
+- **`upvote_feedback`** - Users can upvote feedback with IPFS updates (Platform fee: 1 lamport)
+- **`downvote_feedback`** - Users can downvote feedback with IPFS updates (Platform fee: 1 lamport)  
+- **`archive_feedback_board`** - Creator-only board archival to prevent new interactions while preserving data (No fee)
+
+#### Validation & Security Features
+- **Archive Protection**: Prevents voting and feedback submission on archived boards
+- **Creator Authorization**: Only board creators can archive their boards
+- **IPFS Validation**: Comprehensive CID format and length validation (32-64 chars, must start with "Qm" or "b")
+- **Platform Fee Collection**: Automatic fee transfer to platform wallet `96fN4Eegj84PaUcyEJrxUztDjo7Q7MySJzV2skLfgchY`
+- **Event Emission**: All actions emit blockchain events for tracking and analytics
+
+#### Account Structure
+```rust
+pub struct FeedbackBoard {
+    pub creator: Pubkey,     // Board creator's wallet address (32 bytes)
+    pub ipfs_cid: String,    // Current IPFS content identifier (4 + up to 64 bytes)
+    pub board_id: String,    // Unique board identifier (4 + up to 28 bytes)
+    pub is_archived: bool,   // Archive status flag (1 byte)
+}
+```
+
+#### Error Handling
+The program implements 15 comprehensive error types:
+- **`InvalidIpfsCid`** - Invalid IPFS CID format validation
+- **`BoardIdTooLong`** - Board ID exceeds maximum length
+- **`EmptyBoardId`** / **`EmptyIpfsCid`** - Empty field validation
+- **`DuplicateFeedbackBoard`** - Prevents duplicate board creation
+- **`InsufficientFunds`** - Validates sufficient SOL balance
+- **`CreatorCannotSubmit`** - Prevents creators from self-feedback
+- **`BoardAlreadyArchived`** - Duplicate archival prevention
+- **`CannotSubmitToArchivedBoard`** - Archive interaction protection
+- **`CannotUpvoteInArchivedBoard`** / **`CannotDownvoteInArchivedBoard`** - Archive voting protection
+- **`UnauthorizedAccess`** - Creator-only action enforcement
+
+#### Events System
+- **`FeedbackBoardCreated`** - Board initialization tracking
+- **`FeedbackSubmitted`** - Feedback submission logging
+- **`FeedbackUpvoted`** / **`FeedbackDownvoted`** - Vote tracking with voter identity
+- **`FeedbackBoardArchived`** - Board lifecycle management
 
 ### Storage Layer
 - **IPFS Network** - Distributed storage for feedback data and board content

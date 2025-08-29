@@ -10,11 +10,17 @@ import ShareModal from './components/ShareModal';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import SuccessNotification from '../../components/ui/SuccessNotification';
-import { getBoardById } from '../../utils/supabaseApi';
+import { getBoardById, updateBoardIPFS } from '../../utils/supabaseApi';
 import ipfsFetcher from '../../utils/ipfsFetcher';
+import { ipfsService } from '../../services/ipfsService';
+import { archiveFeedbackBoard, upvoteFeedback, downvoteFeedback } from '../../services/anchorService';
+import { PublicKey } from '@solana/web3.js';
+import { useWallet, useAnchorWallet } from '@solana/wallet-adapter-react';
 
 const BoardView = () => {
   const { boardId } = useParams();
+  const { connected, publicKey } = useWallet();
+  const wallet = useAnchorWallet();
   const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false);
   const [sortBy, setSortBy] = useState('newest');
   const [filterBy, setFilterBy] = useState('all');
@@ -31,6 +37,7 @@ const BoardView = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [isBoardLoading, setIsBoardLoading] = useState(true);
   const [boardNotFound, setBoardNotFound] = useState(false);
+  const [showArchiveSuccess, setShowArchiveSuccess] = useState(false);
 
   const itemsPerPage = 12;
 
@@ -196,7 +203,322 @@ const BoardView = () => {
   const paginatedFeedback = (sortedFeedback || []).slice(startIndex, startIndex + itemsPerPage);
 
   const handleSubmitFeedback = () => {
+    // Check if board is archived
+    if (boardIPFSData?.is_archived || selectedBoard?.archived) {
+      alert('This board has been archived and no longer accepts new feedback.');
+      return;
+    }
     setIsSubmissionModalOpen(true);
+  };
+
+  const handleArchiveBoard = async () => {
+    if (!connected || !wallet) {
+      alert('Please connect your wallet to archive the board.');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      console.log('Archiving board...');
+      
+      // Step 1: Fetch current IPFS data
+      let currentBoardData = null;
+      if (selectedBoard?.ipfs_cid && selectedBoard.ipfs_cid !== 'local-only') {
+        console.log('Fetching existing board data from IPFS...');
+        currentBoardData = await ipfsFetcher.fetchBoardData(selectedBoard.ipfs_cid);
+      }
+      
+      // Step 2: Update IPFS data with is_archived: true
+      const updatedBoardData = {
+        ...currentBoardData,
+        is_archived: true, // Add/update archive flag
+        archived_at: new Date().toISOString(), // Add timestamp
+        // Ensure we have the basic board structure
+        board_id: currentBoardData?.board_id || selectedBoard?.board_id || boardId,
+        board_title: currentBoardData?.board_title || selectedBoard?.board_title,
+        board_description: currentBoardData?.board_description || selectedBoard?.board_description,
+        board_category: currentBoardData?.board_category || selectedBoard?.board_category || 'General',
+        created_by: currentBoardData?.created_by || selectedBoard?.created_by,
+        created_at: currentBoardData?.created_at || selectedBoard?.created_at,
+        feedbacks: currentBoardData?.feedbacks || []
+      };
+      
+      console.log('Uploading archived board data to IPFS...');
+      const ipfsUploadResult = await ipfsService.uploadBoardToIPFS(updatedBoardData);
+      
+      if (!ipfsUploadResult.success) {
+        throw new Error(`Failed to upload to IPFS: ${ipfsUploadResult.error}`);
+      }
+      
+      // Step 3: Call blockchain to archive board
+      console.log('Archiving board on blockchain...');
+      const tx = await archiveFeedbackBoard(wallet, selectedBoard.board_id || boardId);
+      console.log('Board archived on blockchain:', tx);
+      
+      // Step 4: Update Supabase with new CID
+      console.log('Updating board CID in database...');
+      await updateBoardIPFS(selectedBoard.board_id || boardId, ipfsUploadResult.cid);
+      
+      // Step 5: Cleanup old IPFS file
+      if (selectedBoard?.ipfs_cid && selectedBoard.ipfs_cid !== ipfsUploadResult.cid) {
+        try {
+          console.log('🗑️ Deleting old IPFS file...');
+          await ipfsService.deleteByCID(selectedBoard.ipfs_cid);
+          console.log('✅ Old IPFS file deleted');
+        } catch (deleteError) {
+          console.warn('Failed to delete old IPFS file:', deleteError);
+        }
+      }
+
+      // Step 6: Update local state
+      setBoardIPFSData(updatedBoardData);
+      setSelectedBoard(prev => ({ ...prev, archived: true, is_archived: true, ipfs_cid: ipfsUploadResult.cid }));
+      
+      setShowArchiveSuccess(true);
+    } catch (error) {
+      console.error('Error archiving board:', error);
+      alert(`Failed to archive board: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpvoteFeedback = async (feedback) => {
+    if (!connected || !wallet) {
+      alert('Please connect your wallet to vote on feedback.');
+      return;
+    }
+
+    const voterAddress = publicKey.toString();
+
+    try {
+      console.log('Upvoting feedback:', feedback);
+      setIsLoading(true);
+      
+      // Step 1: Fetch current IPFS data
+      let currentBoardData = null;
+      if (selectedBoard?.ipfs_cid && selectedBoard.ipfs_cid !== 'local-only') {
+        console.log('Fetching existing board data from IPFS...');
+        currentBoardData = await ipfsFetcher.fetchBoardData(selectedBoard.ipfs_cid);
+      }
+      
+      if (!currentBoardData || !currentBoardData.feedbacks) {
+        throw new Error('Board data not found');
+      }
+      
+      // Step 2: Find and validate the feedback for voting
+      const targetFeedback = currentBoardData.feedbacks.find(fb => fb.feedback_id === feedback.feedback_id);
+      if (!targetFeedback) {
+        throw new Error('Feedback not found');
+      }
+      
+      // Check if user is trying to vote on their own feedback
+      if (targetFeedback.feedback_giver === voterAddress) {
+        alert('You cannot vote on your own feedback.');
+        return;
+      }
+      
+      // Initialize voter arrays if they don't exist
+      const upvoters = targetFeedback.upvoters || [];
+      const downvoters = targetFeedback.downvoters || [];
+      
+      // Check if user has already upvoted
+      if (upvoters.includes(voterAddress)) {
+        alert('You have already upvoted this feedback.');
+        return;
+      }
+      
+      // Step 3: Update the feedback with new vote
+      const updatedFeedbacks = currentBoardData.feedbacks.map(fb => {
+        if (fb.feedback_id === feedback.feedback_id) {
+          const newUpvoters = [...upvoters, voterAddress];
+          // Remove from downvoters if they previously downvoted
+          const newDownvoters = downvoters.filter(addr => addr !== voterAddress);
+          
+          return {
+            ...fb,
+            upvotes: newUpvoters.length,
+            downvotes: newDownvoters.length,
+            upvoters: newUpvoters,
+            downvoters: newDownvoters
+          };
+        }
+        return {
+          ...fb,
+          upvotes: fb.upvotes || 0,
+          downvotes: fb.downvotes || 0,
+          upvoters: fb.upvoters || [],
+          downvoters: fb.downvoters || []
+        };
+      });
+      
+      // Step 3: Update IPFS data with new vote counts
+      const updatedBoardData = {
+        ...currentBoardData,
+        feedbacks: updatedFeedbacks,
+        latest_feedback_at: new Date().toISOString(),
+        latest_feedback_by: publicKey.toString()
+      };
+      
+      console.log('Uploading updated board data to IPFS...');
+      const ipfsUploadResult = await ipfsService.uploadBoardToIPFS(updatedBoardData);
+      
+      if (!ipfsUploadResult.success) {
+        throw new Error(`Failed to upload to IPFS: ${ipfsUploadResult.error}`);
+      }
+      
+      // Step 4: Call blockchain upvote function
+      console.log('Recording upvote on blockchain...');
+      const creatorPubkey = new PublicKey(selectedBoard.created_by || selectedBoard.owner);
+      const tx = await upvoteFeedback(wallet, creatorPubkey, selectedBoard.board_id || boardId, ipfsUploadResult.cid);
+      console.log('Upvote recorded on blockchain:', tx);
+      
+      // Step 5: Update Supabase with new CID
+      console.log('Updating board CID in database...');
+      await updateBoardIPFS(selectedBoard.board_id || boardId, ipfsUploadResult.cid);
+      
+      // Step 6: Cleanup old IPFS file
+      if (selectedBoard?.ipfs_cid && selectedBoard.ipfs_cid !== ipfsUploadResult.cid) {
+        try {
+          console.log('🗑️ Deleting old IPFS file...');
+          await ipfsService.deleteByCID(selectedBoard.ipfs_cid);
+          console.log('✅ Old IPFS file deleted');
+        } catch (deleteError) {
+          console.warn('Failed to delete old IPFS file:', deleteError);
+        }
+      }
+
+      // Step 7: Update local state
+      setBoardIPFSData(updatedBoardData);
+      setRealFeedback(updatedFeedbacks);
+      setSelectedBoard(prev => ({ ...prev, ipfs_cid: ipfsUploadResult.cid }));
+      
+      console.log('✅ Upvote completed successfully');
+    } catch (error) {
+      console.error('Error upvoting feedback:', error);
+      alert(`Failed to upvote feedback: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDownvoteFeedback = async (feedback) => {
+    if (!connected || !wallet) {
+      alert('Please connect your wallet to vote on feedback.');
+      return;
+    }
+
+    const voterAddress = publicKey.toString();
+
+    try {
+      console.log('Downvoting feedback:', feedback);
+      setIsLoading(true);
+      
+      // Step 1: Fetch current IPFS data
+      let currentBoardData = null;
+      if (selectedBoard?.ipfs_cid && selectedBoard.ipfs_cid !== 'local-only') {
+        console.log('Fetching existing board data from IPFS...');
+        currentBoardData = await ipfsFetcher.fetchBoardData(selectedBoard.ipfs_cid);
+      }
+      
+      if (!currentBoardData || !currentBoardData.feedbacks) {
+        throw new Error('Board data not found');
+      }
+      
+      // Step 2: Find and validate the feedback for voting
+      const targetFeedback = currentBoardData.feedbacks.find(fb => fb.feedback_id === feedback.feedback_id);
+      if (!targetFeedback) {
+        throw new Error('Feedback not found');
+      }
+      
+      // Check if user is trying to vote on their own feedback
+      if (targetFeedback.feedback_giver === voterAddress) {
+        alert('You cannot vote on your own feedback.');
+        return;
+      }
+      
+      // Initialize voter arrays if they don't exist
+      const upvoters = targetFeedback.upvoters || [];
+      const downvoters = targetFeedback.downvoters || [];
+      
+      // Check if user has already downvoted
+      if (downvoters.includes(voterAddress)) {
+        alert('You have already downvoted this feedback.');
+        return;
+      }
+      
+      // Step 3: Update the feedback with new vote
+      const updatedFeedbacks = currentBoardData.feedbacks.map(fb => {
+        if (fb.feedback_id === feedback.feedback_id) {
+          const newDownvoters = [...downvoters, voterAddress];
+          // Remove from upvoters if they previously upvoted
+          const newUpvoters = upvoters.filter(addr => addr !== voterAddress);
+          
+          return {
+            ...fb,
+            upvotes: newUpvoters.length,
+            downvotes: newDownvoters.length,
+            upvoters: newUpvoters,
+            downvoters: newDownvoters
+          };
+        }
+        return {
+          ...fb,
+          upvotes: fb.upvotes || 0,
+          downvotes: fb.downvotes || 0,
+          upvoters: fb.upvoters || [],
+          downvoters: fb.downvoters || []
+        };
+      });
+      
+      // Step 3: Update IPFS data with new vote counts
+      const updatedBoardData = {
+        ...currentBoardData,
+        feedbacks: updatedFeedbacks,
+        latest_feedback_at: new Date().toISOString(),
+        latest_feedback_by: publicKey.toString()
+      };
+      
+      console.log('Uploading updated board data to IPFS...');
+      const ipfsUploadResult = await ipfsService.uploadBoardToIPFS(updatedBoardData);
+      
+      if (!ipfsUploadResult.success) {
+        throw new Error(`Failed to upload to IPFS: ${ipfsUploadResult.error}`);
+      }
+      
+      // Step 4: Call blockchain downvote function
+      console.log('Recording downvote on blockchain...');
+      const creatorPubkey = new PublicKey(selectedBoard.created_by || selectedBoard.owner);
+      const tx = await downvoteFeedback(wallet, creatorPubkey, selectedBoard.board_id || boardId, ipfsUploadResult.cid);
+      console.log('Downvote recorded on blockchain:', tx);
+      
+      // Step 5: Update Supabase with new CID
+      console.log('Updating board CID in database...');
+      await updateBoardIPFS(selectedBoard.board_id || boardId, ipfsUploadResult.cid);
+      
+      // Step 6: Cleanup old IPFS file
+      if (selectedBoard?.ipfs_cid && selectedBoard.ipfs_cid !== ipfsUploadResult.cid) {
+        try {
+          console.log('🗑️ Deleting old IPFS file...');
+          await ipfsService.deleteByCID(selectedBoard.ipfs_cid);
+          console.log('✅ Old IPFS file deleted');
+        } catch (deleteError) {
+          console.warn('Failed to delete old IPFS file:', deleteError);
+        }
+      }
+
+      // Step 7: Update local state
+      setBoardIPFSData(updatedBoardData);
+      setRealFeedback(updatedFeedbacks);
+      setSelectedBoard(prev => ({ ...prev, ipfs_cid: ipfsUploadResult.cid }));
+      
+      console.log('✅ Downvote completed successfully');
+    } catch (error) {
+      console.error('Error downvoting feedback:', error);
+      alert(`Failed to downvote feedback: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const loadMore = async () => {
@@ -343,11 +665,17 @@ const BoardView = () => {
 
               return {
                 id: feedback.feedback_id || `fb_${index}`,
+                feedback_id: feedback.feedback_id || `fb_${index}`, // Add feedback_id for voting
                 content: feedback.feedback_text || feedback.content || '',
                 timestamp: timestamp,
                 sentiment: feedback.feedback_type || 'neutral',
                 tags: Array.isArray(feedback.tags) ? feedback.tags : [], // Ensure tags is always an array
-                createdBy: feedback.created_by || 'Anonymous'
+                createdBy: feedback.created_by || 'Anonymous',
+                feedback_giver: feedback.feedback_giver, // Add feedback giver for self-voting check
+                upvotes: feedback.upvotes || 0, // Add upvotes field
+                downvotes: feedback.downvotes || 0, // Add downvotes field
+                upvoters: feedback.upvoters || [], // Add upvoters array
+                downvoters: feedback.downvoters || [] // Add downvoters array
               };
             });
             
@@ -508,6 +836,7 @@ const BoardView = () => {
               })
             }}
             onSubmitFeedback={handleSubmitFeedback}
+            onArchiveBoard={handleArchiveBoard}
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -569,7 +898,13 @@ const BoardView = () => {
                       <>
                         {paginatedFeedback?.map((feedback) => (
                           <div key={feedback?.id}>
-                            <FeedbackCard feedback={feedback} />
+                            <FeedbackCard 
+                              feedback={feedback}
+                              onUpvote={handleUpvoteFeedback}
+                              onDownvote={handleDownvoteFeedback}
+                              isArchived={boardIPFSData?.is_archived || selectedBoard?.archived}
+                              currentUserAddress={connected ? publicKey?.toString() : null}
+                            />
                           </div>
                         ))}
                         
@@ -716,6 +1051,17 @@ const BoardView = () => {
         message="Your feedback has been stored on IPFS and submitted on-chain via Solana blockchain. Thank you for contributing to this board!"
         actionText="View Updated Board"
         onAction={() => window.location.reload()}
+        duration={6000}
+      />
+
+      {/* Archive Success Notification */}
+      <SuccessNotification
+        isOpen={showArchiveSuccess}
+        onClose={() => setShowArchiveSuccess(false)}
+        title="Board Archived Successfully! 📁"
+        message="Your board has been archived and stored on IPFS with blockchain confirmation. No new feedback can be submitted, but existing feedback remains visible."
+        actionText="Got it"
+        onAction={() => setShowArchiveSuccess(false)}
         duration={6000}
       />
       

@@ -138,10 +138,41 @@ export async function updateBoardIPFS(boardId, newIPFSCID) {
       throw error;
     }
     
-    console.log('Board IPFS CID updated successfully:', data);
+    console.log('Board IPFS updated successfully in Supabase:', data);
     return data;
   } catch (error) {
-    console.error('Error updating board IPFS CID:', error);
+    console.error('Failed to update board IPFS:', error);
+    throw error;
+  }
+}
+
+// Update board archive status and IPFS CID
+export async function updateBoardArchiveStatus(boardId, newIPFSCID, isArchived = true) {
+  try {
+    console.log('Updating board archive status:', { boardId, newIPFSCID, isArchived });
+    
+    const { data, error } = await supabase
+      .from('boards_list')
+      .update({
+        ipfs_cid: newIPFSCID,
+        archived: isArchived,
+        is_archived: isArchived,
+        archived_at: isArchived ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('board_id', boardId)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Supabase error updating board archive status:', error);
+      throw error;
+    }
+    
+    console.log('Board archive status updated successfully:', data);
+    return data;
+  } catch (error) {
+    console.error('Failed to update board archive status:', error);
     throw error;
   }
 }

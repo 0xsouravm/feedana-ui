@@ -8,6 +8,64 @@
   },
   "instructions": [
     {
+      "name": "archive_feedback_board",
+      "discriminator": [
+        104,
+        71,
+        39,
+        61,
+        180,
+        221,
+        164,
+        13
+      ],
+      "accounts": [
+        {
+          "name": "feedback_board",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  101,
+                  101,
+                  100,
+                  98,
+                  97,
+                  99,
+                  107,
+                  95,
+                  98,
+                  111,
+                  97,
+                  114,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "feedback_board.creator",
+                "account": "FeedbackBoard"
+              },
+              {
+                "kind": "account",
+                "path": "feedback_board.board_id",
+                "account": "FeedbackBoard"
+              }
+            ]
+          }
+        },
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "create_feedback_board",
       "discriminator": [
         30,
@@ -76,6 +134,77 @@
         },
         {
           "name": "ipfs_cid",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "downvote_feedback",
+      "discriminator": [
+        203,
+        93,
+        241,
+        174,
+        199,
+        251,
+        80,
+        182
+      ],
+      "accounts": [
+        {
+          "name": "feedback_board",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  101,
+                  101,
+                  100,
+                  98,
+                  97,
+                  99,
+                  107,
+                  95,
+                  98,
+                  111,
+                  97,
+                  114,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "feedback_board.creator",
+                "account": "FeedbackBoard"
+              },
+              {
+                "kind": "account",
+                "path": "feedback_board.board_id",
+                "account": "FeedbackBoard"
+              }
+            ]
+          }
+        },
+        {
+          "name": "voter",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "platform_wallet",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "new_ipfs_cid",
           "type": "string"
         }
       ]
@@ -150,6 +279,77 @@
           "type": "string"
         }
       ]
+    },
+    {
+      "name": "upvote_feedback",
+      "discriminator": [
+        82,
+        245,
+        55,
+        154,
+        217,
+        35,
+        182,
+        93
+      ],
+      "accounts": [
+        {
+          "name": "feedback_board",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  102,
+                  101,
+                  101,
+                  100,
+                  98,
+                  97,
+                  99,
+                  107,
+                  95,
+                  98,
+                  111,
+                  97,
+                  114,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "feedback_board.creator",
+                "account": "FeedbackBoard"
+              },
+              {
+                "kind": "account",
+                "path": "feedback_board.board_id",
+                "account": "FeedbackBoard"
+              }
+            ]
+          }
+        },
+        {
+          "name": "voter",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "platform_wallet",
+          "writable": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "new_ipfs_cid",
+          "type": "string"
+        }
+      ]
     }
   ],
   "accounts": [
@@ -169,6 +369,19 @@
   ],
   "events": [
     {
+      "name": "FeedbackBoardArchived",
+      "discriminator": [
+        208,
+        124,
+        141,
+        189,
+        243,
+        127,
+        126,
+        2
+      ]
+    },
+    {
       "name": "FeedbackBoardCreated",
       "discriminator": [
         164,
@@ -182,6 +395,19 @@
       ]
     },
     {
+      "name": "FeedbackDownvoted",
+      "discriminator": [
+        156,
+        157,
+        91,
+        1,
+        142,
+        166,
+        54,
+        108
+      ]
+    },
+    {
       "name": "FeedbackSubmitted",
       "discriminator": [
         41,
@@ -192,6 +418,19 @@
         103,
         196,
         49
+      ]
+    },
+    {
+      "name": "FeedbackUpvoted",
+      "discriminator": [
+        22,
+        111,
+        199,
+        68,
+        180,
+        197,
+        46,
+        210
       ]
     }
   ],
@@ -250,6 +489,26 @@
       "code": 6010,
       "name": "CreatorCannotSubmit",
       "msg": "The board creator cannot submit a feedback in their own board"
+    },
+    {
+      "code": 6011,
+      "name": "BoardAlreadyArchived",
+      "msg": "Feedback board is already archived"
+    },
+    {
+      "code": 6012,
+      "name": "CannotSubmitToArchivedBoard",
+      "msg": "Cannot submit feedback to archived board"
+    },
+    {
+      "code": 6013,
+      "name": "CannotUpvoteInArchivedBoard",
+      "msg": "Cannot upvote feedback in archived board"
+    },
+    {
+      "code": 6014,
+      "name": "CannotDownvoteInArchivedBoard",
+      "msg": "Cannot downvote feedback in archived board"
     }
   ],
   "types": [
@@ -265,6 +524,26 @@
           {
             "name": "ipfs_cid",
             "type": "string"
+          },
+          {
+            "name": "board_id",
+            "type": "string"
+          },
+          {
+            "name": "is_archived",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FeedbackBoardArchived",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "creator",
+            "type": "pubkey"
           },
           {
             "name": "board_id",
@@ -294,6 +573,26 @@
       }
     },
     {
+      "name": "FeedbackDownvoted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "board_id",
+            "type": "string"
+          },
+          {
+            "name": "new_ipfs_cid",
+            "type": "string"
+          },
+          {
+            "name": "voter",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
       "name": "FeedbackSubmitted",
       "type": {
         "kind": "struct",
@@ -308,6 +607,26 @@
           },
           {
             "name": "feedback_giver",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FeedbackUpvoted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "board_id",
+            "type": "string"
+          },
+          {
+            "name": "new_ipfs_cid",
+            "type": "string"
+          },
+          {
+            "name": "voter",
             "type": "pubkey"
           }
         ]

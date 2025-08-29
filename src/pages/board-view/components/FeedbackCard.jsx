@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 
-const FeedbackCard = ({ feedback }) => {
+const FeedbackCard = ({ feedback, onUpvote, onDownvote, isArchived, currentUserAddress }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isHelpful, setIsHelpful] = useState(false);
+  const [isUpvoting, setIsUpvoting] = useState(false);
+  const [isDownvoting, setIsDownvoting] = useState(false);
   
   const formatTimeAgo = (timestamp) => {
     const now = new Date();
@@ -50,6 +52,35 @@ const FeedbackCard = ({ feedback }) => {
 
   const toggleHelpful = () => {
     setIsHelpful(!isHelpful);
+  };
+
+  // Check voting eligibility
+  const isOwnFeedback = currentUserAddress && feedback.feedback_giver === currentUserAddress;
+  const hasUpvoted = currentUserAddress && feedback.upvoters && feedback.upvoters.includes(currentUserAddress);
+  const hasDownvoted = currentUserAddress && feedback.downvoters && feedback.downvoters.includes(currentUserAddress);
+  const canUpvote = currentUserAddress && !isArchived && !isOwnFeedback && !hasUpvoted;
+  const canDownvote = currentUserAddress && !isArchived && !isOwnFeedback && !hasDownvoted;
+
+  const handleUpvote = async () => {
+    if (isUpvoting || isDownvoting || !canUpvote) return;
+    
+    setIsUpvoting(true);
+    try {
+      await onUpvote(feedback);
+    } finally {
+      setIsUpvoting(false);
+    }
+  };
+
+  const handleDownvote = async () => {
+    if (isUpvoting || isDownvoting || !canDownvote) return;
+    
+    setIsDownvoting(true);
+    try {
+      await onDownvote(feedback);
+    } finally {
+      setIsDownvoting(false);
+    }
   };
 
   // Check if content should be truncated - use character count and line count
@@ -128,19 +159,76 @@ const FeedbackCard = ({ feedback }) => {
 
       {/* Footer */}
       <div className="flex items-center justify-between pt-4 border-t border-border/30">
-        {/* <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-          <div className="flex items-center space-x-1">
-            <Icon name="Heart" size={12} />
-            <span>{feedback?.helpful} helpful</span>
+        <div className="flex items-center space-x-3">
+          {/* Voting buttons */}
+          {!isArchived && (
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={handleUpvote}
+                disabled={isUpvoting || isDownvoting || !canUpvote}
+                title={
+                  !currentUserAddress ? 'Connect wallet to vote' :
+                  isOwnFeedback ? 'Cannot vote on your own feedback' :
+                  hasUpvoted ? 'Already upvoted' :
+                  'Upvote this feedback'
+                }
+                className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-colors duration-200 ${
+                  isUpvoting 
+                    ? 'bg-green-500/20 text-green-500 cursor-wait' 
+                    : hasUpvoted
+                    ? 'bg-green-500/20 text-green-500'
+                    : canUpvote
+                    ? 'hover:bg-green-500/10 text-muted-foreground hover:text-green-500'
+                    : 'text-muted-foreground/50 cursor-not-allowed'
+                } ${(isUpvoting || isDownvoting || !canUpvote) ? 'opacity-50' : ''}`}
+              >
+                {isUpvoting ? (
+                  <div className="w-3.5 h-3.5 border border-green-500 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Icon name="ArrowUp" size={14} />
+                )}
+                <span className="text-xs">{feedback?.upvotes || 0}</span>
+              </button>
+              <button
+                onClick={handleDownvote}
+                disabled={isUpvoting || isDownvoting || !canDownvote}
+                title={
+                  !currentUserAddress ? 'Connect wallet to vote' :
+                  isOwnFeedback ? 'Cannot vote on your own feedback' :
+                  hasDownvoted ? 'Already downvoted' :
+                  'Downvote this feedback'
+                }
+                className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-colors duration-200 ${
+                  isDownvoting 
+                    ? 'bg-red-500/20 text-red-500 cursor-wait' 
+                    : hasDownvoted
+                    ? 'bg-red-500/20 text-red-500'
+                    : canDownvote
+                    ? 'hover:bg-red-500/10 text-muted-foreground hover:text-red-500'
+                    : 'text-muted-foreground/50 cursor-not-allowed'
+                } ${(isUpvoting || isDownvoting || !canDownvote) ? 'opacity-50' : ''}`}
+              >
+                {isDownvoting ? (
+                  <div className="w-3.5 h-3.5 border border-red-500 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Icon name="ArrowDown" size={14} />
+                )}
+                <span className="text-xs">{feedback?.downvotes || 0}</span>
+              </button>
+            </div>
+          )}
+          
+          {/* Sentiment indicator */}
+          <div className={`px-2 py-1 rounded-full text-xs border ${getSentimentColor(feedback?.feedback_type || feedback?.sentiment)}`}>
+            <div className="flex items-center space-x-1">
+              <Icon name={getSentimentIcon(feedback?.feedback_type || feedback?.sentiment)} size={10} />
+              <span className="capitalize">{feedback?.feedback_type || feedback?.sentiment}</span>
+            </div>
           </div>
-          <div className="flex items-center space-x-1">
-            <Icon name="Eye" size={12} />
-            <span>{feedback?.views} views</span>
-          </div>
-        </div> */}
+        </div>
 
         <div className="text-xs text-muted-foreground">
-          ID: {feedback?.id?.slice(-8)}
+          ID: {(feedback?.feedback_id || feedback?.id)?.slice(-8)}
         </div>
       </div>
     </div>

@@ -175,7 +175,8 @@ const FeaturedBoards = () => {
             isHot: feedbackCount > 10 || (latestFeedbackAt && (Date.now() - new Date(latestFeedbackAt).getTime()) < 24 * 60 * 60 * 1000),
             recentSubmission: lastActivity,
             totalFeedbacks: feedbackCount,
-            latestFeedbackAt: latestFeedbackAt
+            latestFeedbackAt: latestFeedbackAt,
+            isArchived: ipfsData?.is_archived || board?.archived || false
           };
         });
         
@@ -250,18 +251,26 @@ const FeaturedBoards = () => {
                   {/* Board Header */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <span className="text-sm font-medium text-accent">{board?.category}</span>
-                        {board?.isHot && (
-                          <div className="flex items-center space-x-1 px-2 py-1 bg-error/10 rounded-full">
-                            <Icon name="Flame" size={12} className="text-error" />
-                            <span className="text-xs font-medium text-error">Hot</span>
-                          </div>
-                        )}
-                        {board?.ipfsCid && board?.ipfsCid !== 'local-only' && (
-                          <div className="flex items-center space-x-1 px-2 py-1 bg-success/10 rounded-full">
-                            <Icon name="Database" size={12} className="text-success" />
-                            <span className="text-xs font-medium text-success">IPFS</span>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm font-medium text-accent">{board?.category}</span>
+                          {board?.isHot && (
+                            <div className="flex items-center space-x-1 px-2 py-1 bg-error/10 rounded-full">
+                              <Icon name="Flame" size={12} className="text-error" />
+                              <span className="text-xs font-medium text-error">Hot</span>
+                            </div>
+                          )}
+                          {board?.ipfsCid && board?.ipfsCid !== 'local-only' && (
+                            <div className="flex items-center space-x-1 px-2 py-1 bg-success/10 rounded-full">
+                              <Icon name="Database" size={12} className="text-success" />
+                              <span className="text-xs font-medium text-success">IPFS</span>
+                            </div>
+                          )}
+                        </div>
+                        {board?.isArchived && (
+                          <div className="flex items-center space-x-1 px-2 py-1 bg-red-500/10 rounded-full">
+                            <Icon name="Archive" size={12} className="text-red-500" />
+                            <span className="text-xs font-medium text-red-500">Archived</span>
                           </div>
                         )}
                       </div>

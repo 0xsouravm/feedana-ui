@@ -49,7 +49,7 @@ export const ipfsService = {
       const gatewayUrl = import.meta.env.VITE_GATEWAY_URL || import.meta.env.NEXT_PUBLIC_GATEWAY_URL;
 
       const jsonContent = JSON.stringify(boardData, null, 2);
-      const filename = `board_${boardData.boardId}_${Date.now()}.json`;
+      const filename = `board_${boardData.board_id}_${Date.now()}.json`;
       
       const file = new File([jsonContent], filename, { type: 'application/json' });
       const upload = await sdk.upload.public.file(file);

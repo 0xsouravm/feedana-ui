@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import Routes from "./Routes";
 import { SolanaProvider } from "./providers/SolanaProvider";
-import { Analytics } from '@vercel/analytics/next';
+import { Analytics } from '@vercel/analytics/react';
 
 function App() {
   useEffect(() => {
@@ -24,7 +24,7 @@ function App() {
   return (
     <SolanaProvider>
       <Routes />
-      <Analytics/>
+      <Analytics />
     </SolanaProvider>
   );
 }

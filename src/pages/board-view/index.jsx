@@ -289,6 +289,8 @@ const BoardView = () => {
       return;
     }
 
+    const voterAddress = publicKey.toString();
+
     try {
       console.log('Upvoting feedback:', feedback);
       setIsLoading(true);
@@ -304,19 +306,49 @@ const BoardView = () => {
         throw new Error('Board data not found');
       }
       
-      // Step 2: Find and update the feedback with upvote
+      // Step 2: Find and validate the feedback for voting
+      const targetFeedback = currentBoardData.feedbacks.find(fb => fb.feedback_id === feedback.feedback_id);
+      if (!targetFeedback) {
+        throw new Error('Feedback not found');
+      }
+      
+      // Check if user is trying to vote on their own feedback
+      if (targetFeedback.feedback_giver === voterAddress) {
+        alert('You cannot vote on your own feedback.');
+        return;
+      }
+      
+      // Initialize voter arrays if they don't exist
+      const upvoters = targetFeedback.upvoters || [];
+      const downvoters = targetFeedback.downvoters || [];
+      
+      // Check if user has already upvoted
+      if (upvoters.includes(voterAddress)) {
+        alert('You have already upvoted this feedback.');
+        return;
+      }
+      
+      // Step 3: Update the feedback with new vote
       const updatedFeedbacks = currentBoardData.feedbacks.map(fb => {
         if (fb.feedback_id === feedback.feedback_id) {
+          const newUpvoters = [...upvoters, voterAddress];
+          // Remove from downvoters if they previously downvoted
+          const newDownvoters = downvoters.filter(addr => addr !== voterAddress);
+          
           return {
             ...fb,
-            upvotes: (fb.upvotes || 0) + 1, // Add upvotes field if not exists
-            downvotes: fb.downvotes || 0 // Ensure downvotes field exists
+            upvotes: newUpvoters.length,
+            downvotes: newDownvoters.length,
+            upvoters: newUpvoters,
+            downvoters: newDownvoters
           };
         }
         return {
           ...fb,
-          upvotes: fb.upvotes || 0, // Ensure upvotes field exists
-          downvotes: fb.downvotes || 0 // Ensure downvotes field exists
+          upvotes: fb.upvotes || 0,
+          downvotes: fb.downvotes || 0,
+          upvoters: fb.upvoters || [],
+          downvoters: fb.downvoters || []
         };
       });
       
@@ -376,6 +408,8 @@ const BoardView = () => {
       return;
     }
 
+    const voterAddress = publicKey.toString();
+
     try {
       console.log('Downvoting feedback:', feedback);
       setIsLoading(true);
@@ -391,19 +425,49 @@ const BoardView = () => {
         throw new Error('Board data not found');
       }
       
-      // Step 2: Find and update the feedback with downvote
+      // Step 2: Find and validate the feedback for voting
+      const targetFeedback = currentBoardData.feedbacks.find(fb => fb.feedback_id === feedback.feedback_id);
+      if (!targetFeedback) {
+        throw new Error('Feedback not found');
+      }
+      
+      // Check if user is trying to vote on their own feedback
+      if (targetFeedback.feedback_giver === voterAddress) {
+        alert('You cannot vote on your own feedback.');
+        return;
+      }
+      
+      // Initialize voter arrays if they don't exist
+      const upvoters = targetFeedback.upvoters || [];
+      const downvoters = targetFeedback.downvoters || [];
+      
+      // Check if user has already downvoted
+      if (downvoters.includes(voterAddress)) {
+        alert('You have already downvoted this feedback.');
+        return;
+      }
+      
+      // Step 3: Update the feedback with new vote
       const updatedFeedbacks = currentBoardData.feedbacks.map(fb => {
         if (fb.feedback_id === feedback.feedback_id) {
+          const newDownvoters = [...downvoters, voterAddress];
+          // Remove from upvoters if they previously upvoted
+          const newUpvoters = upvoters.filter(addr => addr !== voterAddress);
+          
           return {
             ...fb,
-            upvotes: fb.upvotes || 0, // Ensure upvotes field exists
-            downvotes: (fb.downvotes || 0) + 1 // Add downvotes field if not exists
+            upvotes: newUpvoters.length,
+            downvotes: newDownvoters.length,
+            upvoters: newUpvoters,
+            downvoters: newDownvoters
           };
         }
         return {
           ...fb,
-          upvotes: fb.upvotes || 0, // Ensure upvotes field exists
-          downvotes: fb.downvotes || 0 // Ensure downvotes field exists
+          upvotes: fb.upvotes || 0,
+          downvotes: fb.downvotes || 0,
+          upvoters: fb.upvoters || [],
+          downvoters: fb.downvoters || []
         };
       });
       
@@ -607,8 +671,11 @@ const BoardView = () => {
                 sentiment: feedback.feedback_type || 'neutral',
                 tags: Array.isArray(feedback.tags) ? feedback.tags : [], // Ensure tags is always an array
                 createdBy: feedback.created_by || 'Anonymous',
+                feedback_giver: feedback.feedback_giver, // Add feedback giver for self-voting check
                 upvotes: feedback.upvotes || 0, // Add upvotes field
-                downvotes: feedback.downvotes || 0 // Add downvotes field
+                downvotes: feedback.downvotes || 0, // Add downvotes field
+                upvoters: feedback.upvoters || [], // Add upvoters array
+                downvoters: feedback.downvoters || [] // Add downvoters array
               };
             });
             
@@ -836,6 +903,7 @@ const BoardView = () => {
                               onUpvote={handleUpvoteFeedback}
                               onDownvote={handleDownvoteFeedback}
                               isArchived={boardIPFSData?.is_archived || selectedBoard?.archived}
+                              currentUserAddress={connected ? publicKey?.toString() : null}
                             />
                           </div>
                         ))}

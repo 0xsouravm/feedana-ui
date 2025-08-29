@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 
-const FeedbackCard = ({ feedback, onUpvote, onDownvote, isArchived }) => {
+const FeedbackCard = ({ feedback, onUpvote, onDownvote, isArchived, currentUserAddress }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isHelpful, setIsHelpful] = useState(false);
   const [isUpvoting, setIsUpvoting] = useState(false);
@@ -54,8 +54,15 @@ const FeedbackCard = ({ feedback, onUpvote, onDownvote, isArchived }) => {
     setIsHelpful(!isHelpful);
   };
 
+  // Check voting eligibility
+  const isOwnFeedback = currentUserAddress && feedback.feedback_giver === currentUserAddress;
+  const hasUpvoted = currentUserAddress && feedback.upvoters && feedback.upvoters.includes(currentUserAddress);
+  const hasDownvoted = currentUserAddress && feedback.downvoters && feedback.downvoters.includes(currentUserAddress);
+  const canUpvote = currentUserAddress && !isArchived && !isOwnFeedback && !hasUpvoted;
+  const canDownvote = currentUserAddress && !isArchived && !isOwnFeedback && !hasDownvoted;
+
   const handleUpvote = async () => {
-    if (isUpvoting || isDownvoting) return; // Prevent double-clicks
+    if (isUpvoting || isDownvoting || !canUpvote) return;
     
     setIsUpvoting(true);
     try {
@@ -66,7 +73,7 @@ const FeedbackCard = ({ feedback, onUpvote, onDownvote, isArchived }) => {
   };
 
   const handleDownvote = async () => {
-    if (isUpvoting || isDownvoting) return; // Prevent double-clicks
+    if (isUpvoting || isDownvoting || !canDownvote) return;
     
     setIsDownvoting(true);
     try {
@@ -158,12 +165,22 @@ const FeedbackCard = ({ feedback, onUpvote, onDownvote, isArchived }) => {
             <div className="flex items-center space-x-2">
               <button
                 onClick={handleUpvote}
-                disabled={isUpvoting || isDownvoting}
+                disabled={isUpvoting || isDownvoting || !canUpvote}
+                title={
+                  !currentUserAddress ? 'Connect wallet to vote' :
+                  isOwnFeedback ? 'Cannot vote on your own feedback' :
+                  hasUpvoted ? 'Already upvoted' :
+                  'Upvote this feedback'
+                }
                 className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-colors duration-200 ${
                   isUpvoting 
                     ? 'bg-green-500/20 text-green-500 cursor-wait' 
-                    : 'hover:bg-green-500/10 text-muted-foreground hover:text-green-500'
-                } ${isUpvoting || isDownvoting ? 'opacity-50' : ''}`}
+                    : hasUpvoted
+                    ? 'bg-green-500/20 text-green-500'
+                    : canUpvote
+                    ? 'hover:bg-green-500/10 text-muted-foreground hover:text-green-500'
+                    : 'text-muted-foreground/50 cursor-not-allowed'
+                } ${(isUpvoting || isDownvoting || !canUpvote) ? 'opacity-50' : ''}`}
               >
                 {isUpvoting ? (
                   <div className="w-3.5 h-3.5 border border-green-500 border-t-transparent rounded-full animate-spin" />
@@ -174,12 +191,22 @@ const FeedbackCard = ({ feedback, onUpvote, onDownvote, isArchived }) => {
               </button>
               <button
                 onClick={handleDownvote}
-                disabled={isUpvoting || isDownvoting}
+                disabled={isUpvoting || isDownvoting || !canDownvote}
+                title={
+                  !currentUserAddress ? 'Connect wallet to vote' :
+                  isOwnFeedback ? 'Cannot vote on your own feedback' :
+                  hasDownvoted ? 'Already downvoted' :
+                  'Downvote this feedback'
+                }
                 className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-colors duration-200 ${
                   isDownvoting 
                     ? 'bg-red-500/20 text-red-500 cursor-wait' 
-                    : 'hover:bg-red-500/10 text-muted-foreground hover:text-red-500'
-                } ${isUpvoting || isDownvoting ? 'opacity-50' : ''}`}
+                    : hasDownvoted
+                    ? 'bg-red-500/20 text-red-500'
+                    : canDownvote
+                    ? 'hover:bg-red-500/10 text-muted-foreground hover:text-red-500'
+                    : 'text-muted-foreground/50 cursor-not-allowed'
+                } ${(isUpvoting || isDownvoting || !canDownvote) ? 'opacity-50' : ''}`}
               >
                 {isDownvoting ? (
                   <div className="w-3.5 h-3.5 border border-red-500 border-t-transparent rounded-full animate-spin" />

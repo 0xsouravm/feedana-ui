@@ -184,6 +184,16 @@ const BoardHeader = ({ board, onSubmitFeedback, onArchiveBoard }) => {
                 Archive Board
               </Button>
             </div>
+          ) : isArchived && isCreator ? (
+            <div className="w-full bg-muted/20 border border-border/30 rounded-xl p-4 text-center">
+              <Icon name="User" size={24} className="text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">
+                You created this board
+              </p>
+              <p className="text-xs text-muted-foreground/70 mt-1">
+                This board is now archived
+              </p>
+            </div>
           ) : null}
 
           <div className="bg-muted/20 rounded-xl p-4">

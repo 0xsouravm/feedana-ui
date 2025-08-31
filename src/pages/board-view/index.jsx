@@ -832,7 +832,9 @@ const BoardView = () => {
                 created_at: boardIPFSData.created_at,
                 createdAt: boardIPFSData.created_at, // Keep both for compatibility
                 totalSubmissions: boardIPFSData.total_feedback_count,
-                created_by: boardIPFSData.created_by
+                created_by: boardIPFSData.created_by,
+                is_archived: boardIPFSData.is_archived, // Pass through archive status
+                archived: boardIPFSData.is_archived // Keep both for compatibility
               })
             }}
             onSubmitFeedback={handleSubmitFeedback}
